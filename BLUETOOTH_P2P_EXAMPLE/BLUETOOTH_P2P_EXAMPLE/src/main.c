@@ -31,7 +31,32 @@
 #include <asf.h>
 #include <string.h>
 
+/************************************************************************/
+/* variaveis globais                                                    */
+/************************************************************************/
+
 volatile long g_systimer = 0;
+volatile int encoderPosCount = 0;
+volatile int pinALast;
+
+
+
+// Encoder decoder
+#define EN_CLK PIOD // Connected to CLK on KY040 encoder
+#define EN_CLK_ID ID_PIOD
+#define EN_CLK_PIN 22
+#define EN_CLK_PIN_MASK (1 <<  EN_CLK_PIN)
+
+#define EN_DT PIOD // Connected to DT on KY040 encoder
+#define EN_DT_ID ID_PIOD
+#define EN_DT_PIN 21
+#define EN_DT_PIN_MASK (1 <<  EN_DT_PIN)
+
+
+
+/************************************************************************/
+/* funcoes                                                              */
+/*************************************************************************/
 
 void SysTick_Handler() {
 	g_systimer++;	
@@ -79,7 +104,7 @@ void config_console(void) {
 	usart_enable_tx(USART1);
 	usart_enable_rx(USART1);
 }
-
+/* 
 void hm10_config_server(void) {
 	usart_serial_options_t config;
 	config.baudrate = 9600;
@@ -93,7 +118,7 @@ void hm10_config_server(void) {
 	 // RX - PB0  TX - PB1 
 	 pio_configure(PIOB, PIO_PERIPH_C, (1 << 0), PIO_DEFAULT);
 	 pio_configure(PIOB, PIO_PERIPH_C, (1 << 1), PIO_DEFAULT);
-}
+} */
 
 void hm10_config_client(void) {
 	usart_serial_options_t config;
@@ -109,7 +134,7 @@ void hm10_config_client(void) {
 	pio_configure(PIOD, PIO_PERIPH_A, (1 << 28), PIO_DEFAULT);
 	pio_configure(PIOD, PIO_PERIPH_A, (1 << 30), PIO_DEFAULT);
 }
-
+/*
 int hm10_server_init(void) {
 	char buffer_rx[128];
 	usart_send_command(USART0, buffer_rx, 1000, "AT", 200);
@@ -119,7 +144,7 @@ int hm10_server_init(void) {
 	usart_send_command(USART0, buffer_rx, 1000, "AT+NAMEServer", 400);
 	usart_send_command(USART0, buffer_rx, 1000, "AT+ROLE0", 400);
 	usart_log("hm10_server_init", buffer_rx);
-}
+} */
 
 int hm10_client_init(void) {
 	char buffer_rx[128];
@@ -135,12 +160,49 @@ int hm10_client_init(void) {
 	usart_log("hm10_client_init", buffer_rx);
 	usart_send_command(UART3, buffer_rx, 1000, "AT+RESET", 800); // http://www.martyncurrey.com/hm-10-bluetooth-4ble-modules/
 	usart_log("hm10_client_init", buffer_rx);
-	usart_send_command(UART3, buffer_rx, 1000, "AT+DISC?", 10000); 
+	usart_send_command(UART3, buffer_rx, 1000, "AT+DISC?", 1000); 
 	usart_log("hm10_client_init", buffer_rx);
-	usart_send_command(UART3, buffer_rx, 1000, "AT+CONN0", 1000);
+	usart_send_command(UART3, buffer_rx, 1000, "AT+COND43639D8BD1D", 1000); //D43639D8BD1D
 	usart_log("hm10_client_init", buffer_rx);
 	
 }
+
+int encoder(void){
+//pio_clear(LED_PIO, LED_PIO_PIN_MASK);
+//pmc_sleep(SAM_PM_SMODE_SLEEP_WFI);
+int bCW = 0; //boleano
+
+
+
+int aVal = pio_get(EN_CLK, PIO_INPUT,  EN_CLK_PIN_MASK);// digitalRead(pinA)?
+if (aVal != pinALast){ // Means the knob is rotating
+	// if the knob is rotating, we need to determine direction
+	// We do that by reading pin B.
+	if (pio_get(PIOD, PIO_INPUT,  EN_DT_PIN_MASK)!= aVal){ // Means pin A Changed first  We're Rotating Clockwise
+		encoderPosCount++;
+		bCW = 1;
+	}
+	else {// Otherwise B changed first and we're moving CCW
+		bCW = 0;
+		encoderPosCount--;
+	}
+	//printf("Rotated: ");
+	if (bCW){
+		//printf("clockwise");
+
+	}
+	else{
+		//printf("counterclockwise");
+		
+	}
+	//printf("Encoder Position: ");
+	//printf(encoderPosCount);
+	pinALast = aVal;
+}
+
+
+}
+
 
 int main (void)
 {
@@ -151,18 +213,28 @@ int main (void)
 	config_console();
 	
 	usart_put_string(USART1, "Inicializando...\r\n");
+	/*
 	usart_put_string(USART1, "Config HC05 Server...\r\n");
 	hm10_config_server();
 	hm10_server_init();
+	*/
 	usart_put_string(USART1, "Config HC05 Client...\r\n");
 	hm10_config_client(); 
 	hm10_client_init();
 	char buffer[1024];
 	
+	pinALast = pio_get(EN_CLK, PIO_INPUT,  EN_CLK_PIN_MASK);
+	
 	while(1) {
 		usart_put_string(UART3, "OI\n");
-		usart_get_string(USART0, buffer, 1024, 1000);
+		usart_get_string(UART3, buffer, 1024, 1000);
 		usart_log("main", buffer);
+		
+		
+		
+		sprintf(buffer, "%d \n", encoderPosCount);
+		usart_log("encoder", buffer);
+		
 	}
 	
 	
