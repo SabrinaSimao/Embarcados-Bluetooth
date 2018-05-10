@@ -2,6 +2,8 @@
 # Automatically-generated file. Do not edit or delete the file
 ################################################################################
 
+src\ASF\sam\drivers\tc\tc.c
+
 src\ASF\sam\drivers\usart\usart.c
 
 src\ASF\common\services\serial\usart_serial.c

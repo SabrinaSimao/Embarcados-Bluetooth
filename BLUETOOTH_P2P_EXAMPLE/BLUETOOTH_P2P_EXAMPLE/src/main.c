@@ -1,32 +1,9 @@
-/**
- * \file
- *
- * \brief Empty user application template
- *
- */
-
-/**
- * \mainpage User Application template doxygen documentation
- *
- * \par Empty user application template
- *
- * Bare minimum empty user application template
- *
- * \par Content
- *
- * -# Include the ASF header files (through asf.h)
- * -# "Insert system clock initialization code here" comment
- * -# Minimal main function that starts with a call to board_init()
- * -# "Insert application code here" comment
- *
- */
-
 /*
- * Include header files for all drivers that have been imported from
- * Atmel Software Framework (ASF).
- */
-/*
- * Support and FAQ: visit <a href="http://www.atmel.com/design-support/">Atmel Support</a>
+ Controle Remoto (client)
+ Projeto Conectividade
+ Professor Rafael Corsi e Eduardo Marossi
+ Alunos Sabrina e Paulo 
+ 2018
  */
 #include <asf.h>
 #include <string.h>
@@ -35,24 +12,34 @@
 /* variaveis globais                                                    */
 /************************************************************************/
 
-volatile long g_systimer = 0;
-volatile int encoderPosCount = 0;
-volatile int pinALast;
+volatile uint32_t g_systimer = 0;
+volatile uint8_t encoderPosCount = 0;
+volatile uint8_t pinALast;
+volatile uint8_t flag_encoder = 1;
 
 
 
 // Encoder decoder
-#define EN_CLK PIOD // Connected to CLK on KY040 encoder
 #define EN_CLK_ID ID_PIOD
+#define EN_CLK PIOD // Connected to CLK on KY040 encoder
 #define EN_CLK_PIN 22
 #define EN_CLK_PIN_MASK (1 <<  EN_CLK_PIN)
 
-#define EN_DT PIOD // Connected to DT on KY040 encoder
 #define EN_DT_ID ID_PIOD
+#define EN_DT PIOD // Connected to DT on KY040 encoder
 #define EN_DT_PIN 21
 #define EN_DT_PIN_MASK (1 <<  EN_DT_PIN)
 
-
+static void Encoder_Handler();
+void config_console();
+void Encoder_init();
+int hm10_client_init();
+void hm10_config_client();
+void SysTick_Handler();
+void usart_put_string();
+void usart_log();
+int usart_get_string();
+void usart_send_command();
 
 /************************************************************************/
 /* funcoes                                                              */
@@ -167,39 +154,65 @@ int hm10_client_init(void) {
 	
 }
 
-int encoder(void){
-//pio_clear(LED_PIO, LED_PIO_PIN_MASK);
-//pmc_sleep(SAM_PM_SMODE_SLEEP_WFI);
-int bCW = 0; //boleano
+void Encoder_init(void){
+	/* config. pino CLK em modo de entrada */
+	pmc_enable_periph_clk(EN_CLK_ID);
+	pio_set_input(EN_CLK, EN_CLK_PIN_MASK, PIO_PULLUP | PIO_DEBOUNCE);
 
+	/* indica funcao (but_Handler) a ser chamada quando houver uma interrupo */
+	pio_enable_interrupt(EN_CLK, EN_CLK_PIN_MASK);// INTERRUPCAO
+	pio_handler_set(EN_CLK,EN_CLK_ID, EN_CLK_PIN_MASK, PIO_IT_FALL_EDGE, Encoder_Handler);
 
+	/* e configura sua prioridade  */
+	NVIC_EnableIRQ(EN_CLK_ID);
+	NVIC_SetPriority(EN_CLK_ID, 1);
+	/*
+	// pino DT
+	/* config. pino DT em modo de entrada 
+	pmc_enable_periph_clk(EN_DT_ID);
+	pio_set_input(EN_DT, EN_DT_PIN_MASK, PIO_PULLUP | PIO_DEBOUNCE);
 
-int aVal = pio_get(EN_CLK, PIO_INPUT,  EN_CLK_PIN_MASK);// digitalRead(pinA)?
-if (aVal != pinALast){ // Means the knob is rotating
-	// if the knob is rotating, we need to determine direction
-	// We do that by reading pin B.
-	if (pio_get(PIOD, PIO_INPUT,  EN_DT_PIN_MASK)!= aVal){ // Means pin A Changed first  We're Rotating Clockwise
-		encoderPosCount++;
-		bCW = 1;
+	/* indica funcao (but_Handler) a ser chamada quando houver uma interrupo
+	pio_enable_interrupt(EN_DT, EN_DT_PIN_MASK);// INTERRUPCAO
+	pio_handler_set(EN_DT,EN_DT_ID, EN_DT_PIN_MASK, PIO_IT_FALL_EDGE, Encoder_Handler);
+
+	/* e configura sua prioridade                       
+	NVIC_EnableIRQ(EN_DT_ID);
+	NVIC_SetPriority(EN_DT_ID, 0);
+	*/
 	}
-	else {// Otherwise B changed first and we're moving CCW
-		bCW = 0;
-		encoderPosCount--;
-	}
-	//printf("Rotated: ");
-	if (bCW){
-		//printf("clockwise");
 
-	}
-	else{
-		//printf("counterclockwise");
-		
-	}
-	//printf("Encoder Position: ");
-	//printf(encoderPosCount);
-	pinALast = aVal;
-}
 
+
+static void Encoder_Handler(uint32_t id, uint32_t mask){
+
+	//flag_encoder = 0;
+	//sprintf(buffer, "%d \n", encoderPosCount);
+	//usart_log("encoder", buffer);
+	int temp = encoderPosCount++;
+	char temp_str[5];
+	itoa(temp, temp_str, 10);
+	usart_put_string(UART3, temp_str);
+	//flag_encoder = 1;
+	//encoderPosCount++;
+	
+	/*
+	volatile uint8_t aVal = pio_get(EN_CLK, PIO_INPUT,  EN_CLK_PIN_MASK);// digitalRead(pinA)?
+	
+		if (aVal != pinALast){ // Means the knob is rotating
+			// if the knob is rotating, we need to determine direction
+			// We do that by reading pin B.
+			if (pio_get(PIOD, PIO_INPUT,  EN_DT_PIN_MASK)!= aVal){ // Means pin A Changed first  We're Rotating Clockwise
+				encoderPosCount++;
+				
+			}
+			else {// Otherwise B changed first and we're moving CCW
+				encoderPosCount--;
+				
+			}
+			pinALast = aVal;
+		}
+		*/
 
 }
 
@@ -208,10 +221,14 @@ int main (void)
 {
 	board_init();
 	sysclk_init();
+	
+	/* Disable the watchdog */
+	WDT->WDT_MR = WDT_MR_WDDIS;
+
 	delay_init();
 	SysTick_Config(sysclk_get_cpu_hz() / 1000); // 1 ms
 	config_console();
-	
+		
 	usart_put_string(USART1, "Inicializando...\r\n");
 	/*
 	usart_put_string(USART1, "Config HC05 Server...\r\n");
@@ -225,19 +242,34 @@ int main (void)
 	
 	pinALast = pio_get(EN_CLK, PIO_INPUT,  EN_CLK_PIN_MASK);
 	
+
+	
+	Encoder_init();
+
+	volatile uint32_t g_systimer = 0;
+	volatile uint8_t encoderPosCount = 0;
+	volatile uint8_t flag_encoder = 1;
+
 	while(1) {
-		usart_put_string(UART3, "OI\n");
-		usart_get_string(UART3, buffer, 1024, 1000);
-		usart_log("main", buffer);
+		//usart_put_string(UART3, "OI\n");
+		//usart_get_string(UART3, buffer, 1024, 1000);
+		//usart_log("main", buffer);
 		
+
 		
+		if(!flag_encoder){
+			sprintf(buffer, "%d \n", encoderPosCount);
+			usart_log("encoder", buffer);
+			int temp = encoderPosCount;
+			char temp_str[5];
+			itoa(temp, temp_str, 10);
+			usart_put_string(UART3, temp_str);
+			flag_encoder = 1;
+		}
 		
-		sprintf(buffer, "%d \n", encoderPosCount);
-		usart_log("encoder", buffer);
+		//sprintf(buffer, "%d \n", encoderPosCount);
+		//usart_log("encoder", buffer);
 		
 	}
 	
-	
-
-	/* Insert application code here, after the board has been initialized. */
 }
