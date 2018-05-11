@@ -13,9 +13,10 @@
 /************************************************************************/
 
 volatile uint32_t g_systimer = 0;
-volatile uint8_t encoderPosCount = 0;
-volatile uint8_t pinALast;
-volatile uint8_t flag_encoder = 0;
+volatile int32_t encoderPosCount = 0;
+volatile uint32_t pinALast;
+volatile uint32_t flag_encoder = 0;
+volatile uint32_t flag_but = 0;
 
 
 
@@ -30,6 +31,12 @@ volatile uint8_t flag_encoder = 0;
 #define EN_DT_PIN 21
 #define EN_DT_PIN_MASK (1 <<  EN_DT_PIN)
 
+#define BUT_PIO_ID			  ID_PIOA
+#define BUT_PIO				  PIOA
+#define BUT_PIN				  11
+#define BUT_PIN_MASK			  (1 << BUT_PIN)
+#define BUT_DEBOUNCING_VALUE  79
+
 static void Encoder_Handler();
 void config_console();
 void Encoder_init();
@@ -40,6 +47,8 @@ void usart_put_string();
 void usart_log();
 int usart_get_string();
 void usart_send_command();
+void BUT_init();
+static void Button_Handler();
 
 /************************************************************************/
 /* funcoes                                                              */
@@ -91,21 +100,6 @@ void config_console(void) {
 	usart_enable_tx(USART1);
 	usart_enable_rx(USART1);
 }
-/* 
-void hm10_config_server(void) {
-	usart_serial_options_t config;
-	config.baudrate = 9600;
-	config.charlength = US_MR_CHRL_8_BIT;
-	config.paritytype = US_MR_PAR_NO;
-	config.stopbits = false;
-	usart_serial_init(USART0, &config);
-	usart_enable_tx(USART0);
-	usart_enable_rx(USART0);
-	
-	 // RX - PB0  TX - PB1 
-	 pio_configure(PIOB, PIO_PERIPH_C, (1 << 0), PIO_DEFAULT);
-	 pio_configure(PIOB, PIO_PERIPH_C, (1 << 1), PIO_DEFAULT);
-} */
 
 void hm10_config_client(void) {
 	usart_serial_options_t config;
@@ -121,17 +115,6 @@ void hm10_config_client(void) {
 	pio_configure(PIOD, PIO_PERIPH_A, (1 << 28), PIO_DEFAULT);
 	pio_configure(PIOD, PIO_PERIPH_A, (1 << 30), PIO_DEFAULT);
 }
-/*
-int hm10_server_init(void) {
-	char buffer_rx[128];
-	usart_send_command(USART0, buffer_rx, 1000, "AT", 200);
-	usart_send_command(USART0, buffer_rx, 1000, "AT", 200);
-	usart_send_command(USART0, buffer_rx, 1000, "AT", 200);
-	usart_send_command(USART0, buffer_rx, 1000, "AT+RESET", 400);	
-	usart_send_command(USART0, buffer_rx, 1000, "AT+NAMEServer", 400);
-	usart_send_command(USART0, buffer_rx, 1000, "AT+ROLE0", 400);
-	usart_log("hm10_server_init", buffer_rx);
-} */
 
 int hm10_client_init(void) {
 	char buffer_rx[128];
@@ -161,69 +144,63 @@ void Encoder_init(void){
 
 	/* indica funcao (but_Handler) a ser chamada quando houver uma interrupo */
 	pio_enable_interrupt(EN_CLK, EN_CLK_PIN_MASK);// INTERRUPCAO
-	pio_handler_set(EN_CLK,EN_CLK_ID, EN_CLK_PIN_MASK, PIO_IT_FALL_EDGE, Encoder_Handler);
+	pio_handler_set(EN_CLK,EN_CLK_ID, EN_CLK_PIN_MASK, PIO_IT_FALL_EDGE || PIO_IT_RISE_EDGE, Encoder_Handler);
 
 	/* e configura sua prioridade  */
 	NVIC_EnableIRQ(EN_CLK_ID);
 	NVIC_SetPriority(EN_CLK_ID, 1);
-	
-	/*			PINO DT      */
-	//config. pino DT em modo de entrada 
-	pmc_enable_periph_clk(EN_DT_ID);
-	pio_set_input(EN_DT, EN_DT_PIN_MASK, PIO_PULLUP | PIO_DEBOUNCE);
-
-	//indica funcao (but_Handler) a ser chamada quando houver uma interrupo
-	pio_enable_interrupt(EN_DT, EN_DT_PIN_MASK);// INTERRUPCAO
-	pio_handler_set(EN_DT,EN_DT_ID, EN_DT_PIN_MASK, PIO_IT_FALL_EDGE, Encoder_Handler);
-
-	//configura sua prioridade                       
-	NVIC_EnableIRQ(EN_DT_ID);
-	NVIC_SetPriority(EN_DT_ID, 0);
 	
 	}
 
 
 
 static void Encoder_Handler(uint32_t id, uint32_t mask){
-
-	//flag_encoder = 0;
-	//sprintf(buffer, "%d \n", encoderPosCount);
-	//usart_log("encoder", buffer);
 	
-	/*int temp = encoderPosCount++;
-	char temp_str[5];
-	itoa(temp, temp_str, 10);
-	usart_put_string(UART3, temp_str);*/
-	usart_put_string(USART1, "irq...\r\n");
-			char buffer[54];
-			sprintf(buffer, "flag before %d \n", flag_encoder);
-			usart_put_string(USART1, buffer);
-
-	flag_encoder = 1;
-	
+	char buffer[42];
+	sprintf(buffer, "flag before %d \n", flag_encoder);
+	usart_put_string(USART1, buffer);
 			
-			sprintf(buffer, "flag after %d \n", flag_encoder);
-			usart_put_string(USART1, buffer);
-	//encoderPosCount++;
-	
-	/*
 	volatile uint8_t aVal = pio_get(EN_CLK, PIO_INPUT,  EN_CLK_PIN_MASK);// digitalRead(pinA)?
 	
-		if (aVal != pinALast){ // Means the knob is rotating
-			// if the knob is rotating, we need to determine direction
-			// We do that by reading pin B.
-			if (pio_get(PIOD, PIO_INPUT,  EN_DT_PIN_MASK)!= aVal){ // Means pin A Changed first  We're Rotating Clockwise
-				encoderPosCount++;
-				
-			}
-			else {// Otherwise B changed first and we're moving CCW
-				encoderPosCount--;
-				
-			}
-			pinALast = aVal;
+	if (pio_get(PIOD, PIO_INPUT,  EN_DT_PIN_MASK)!= aVal) { // Means pin A Changed first  We're Rotating Clockwise
+		if (encoderPosCount < 100){
+			encoderPosCount++;
 		}
-		*/
+		
+	}
+	else if (encoderPosCount > 0){// Otherwise B changed first and we're moving CCW
+		encoderPosCount--;
+		}
+		
+		
+	flag_encoder = 1;
+	pinALast = aVal;
+	
+}
 
+void BUT_init(void){
+	/* config. pino botao em modo de entrada */
+	pmc_enable_periph_clk(BUT_PIO_ID);
+	pio_set_input(BUT_PIO, BUT_PIN_MASK, PIO_PULLUP | PIO_DEBOUNCE);
+
+	/* config. interrupcao em borda de descida no botao do kit */
+	/* indica funcao (but_Handler) a ser chamada quando houver uma interrupo */
+	pio_enable_interrupt(BUT_PIO, BUT_PIN_MASK);// INTERRUPCAO
+	pio_handler_set(BUT_PIO, BUT_PIO_ID, BUT_PIN_MASK, PIO_IT_FALL_EDGE, Button_Handler);
+
+	/* habilita interrupco do PIO que controla o botao */
+	/* e configura sua prioridade                        */
+	NVIC_EnableIRQ(BUT_PIO_ID);
+	NVIC_SetPriority(BUT_PIO_ID, 1);
+	}
+	
+static void Button_Handler(uint32_t id, uint32_t mask){
+		usart_put_string(UART3, "!");
+		flag_but = 1;
+		
+		char buffer[54];
+		sprintf(buffer, "flag butt %d \n", flag_but);
+		usart_put_string(USART1, buffer);
 }
 
 
@@ -253,30 +230,35 @@ int main (void)
 	pinALast = pio_get(EN_CLK, PIO_INPUT,  EN_CLK_PIN_MASK);
 	
 	Encoder_init();
+	BUT_init();
 
 	g_systimer = 0;
 	encoderPosCount = 0;
 	flag_encoder = 0;
+	flag_but = 0;
 
 	while(1) {
-		//usart_put_string(UART3, "OI\n");
-		//usart_get_string(UART3, buffer, 1024, 1000);
-		//usart_log("main", buffer);
+		if (flag_but){
+			//usart_put_string(UART3, "OI\n");
+			//usart_get_string(UART3, buffer, 1024, 1000);
+			//usart_log("main", buffer);
 		
-		sprintf(buffer, "flag %d \n", flag_encoder);
-		usart_put_string(USART1, buffer);
-		delay_ms(500);
+			sprintf(buffer, "flag %d \n", flag_encoder);
+			usart_put_string(USART1, buffer);
+			delay_ms(500);
 		
-		if(flag_encoder == 1){
-			usart_put_string(USART1, "entrou...\r\n");
+			if(flag_encoder == 1){
+				usart_put_string(USART1, "entrou...\r\n");
 
-			sprintf(buffer, "%d \n", encoderPosCount);
-			usart_log("encoder", buffer);
-			int temp = encoderPosCount++;
-			char temp_str[5];
-			itoa(temp, temp_str, 10);
-			usart_put_string(UART3, temp_str);
-			flag_encoder = 0;
+				sprintf(buffer, "%d \n", encoderPosCount);
+				usart_log("encoder", buffer);
+				int temp = encoderPosCount;
+				char temp_str[5];
+				itoa(temp, temp_str, 10);
+				usart_put_string(UART3, temp_str);
+				flag_encoder = 0;
+			}
+		
 		}
 		
 		//sprintf(buffer, "%d \n", encoderPosCount);
