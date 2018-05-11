@@ -161,7 +161,7 @@ void Encoder_init(void){
 
 	/* indica funcao (but_Handler) a ser chamada quando houver uma interrupo */
 	pio_enable_interrupt(EN_CLK, EN_CLK_PIN_MASK);// INTERRUPCAO
-	pio_handler_set(EN_CLK,EN_CLK_ID, EN_CLK_PIN_MASK, PIO_IT_FALL_EDGE, Encoder_Handler);
+	pio_handler_set(EN_CLK,EN_CLK_ID, EN_CLK_PIN_MASK, PIO_IT_FALL_EDGE , Encoder_Handler);
 
 	/* e configura sua prioridade  */
 	NVIC_EnableIRQ(EN_CLK_ID);
@@ -259,9 +259,7 @@ int main (void)
 	flag_encoder = 0;
 
 	while(1) {
-		//usart_put_string(UART3, "OI\n");
-		//usart_get_string(UART3, buffer, 1024, 1000);
-		//usart_log("main", buffer);
+
 		
 		sprintf(buffer, "flag %d \n", flag_encoder);
 		usart_put_string(USART1, buffer);

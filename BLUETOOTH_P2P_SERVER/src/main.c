@@ -11,6 +11,10 @@
 #include <string.h>
 
 volatile long g_systimer = 0;
+volatile uint8_t flag_online = 0;
+volatile uint8_t not_connected = 1;
+void USART0_Handler();
+
 
 void SysTick_Handler() {
 	g_systimer++;	
@@ -69,10 +73,43 @@ void hm10_config_server(void) {
 	usart_enable_tx(USART0);
 	usart_enable_rx(USART0);
 	
-	 // RX - PB0  TX - PB1 
-	 pio_configure(PIOB, PIO_PERIPH_C, (1 << 0), PIO_DEFAULT);
-	 pio_configure(PIOB, PIO_PERIPH_C, (1 << 1), PIO_DEFAULT);
+	sysclk_enable_peripheral_clock(ID_PIOB);
+	usart_init_rs232(USART0, &config, sysclk_get_peripheral_hz());
+
+
+	// RX - PB0  TX - PB1
+	pio_configure(PIOB, PIO_PERIPH_C, (1 << 0), PIO_DEFAULT);
+	pio_configure(PIOB, PIO_PERIPH_C, (1 << 1), PIO_DEFAULT);
+	
+	
+	/* Ativa Clock e IRQ periferico USART0 */
+	sysclk_enable_peripheral_clock(ID_USART0);
+	
+	usart_enable_interrupt(USART0, US_IER_RXRDY);
+	NVIC_SetPriority(ID_USART0, 1);
+	NVIC_EnableIRQ(ID_USART0);
+
+
 }
+
+void USART0_Handler(){
+	
+	char buffer[54];
+	
+	usart_get_string(USART0, buffer, 54, 1000);
+	usart_put_string(USART1,"Entrou");
+	
+	if(not_connected){
+		if (usart_get_string(USART0, buffer, 54, 1000) == "!\n"){
+			flag_online = 1;
+			not_connected = 0;
+		} else{
+			usart_put_string(USART1, "Recebi varias bosta\r\n");
+			usart_put_string(USART0, "NA\n");	
+		}
+	}
+}
+
 /*
 void hm10_config_client(void) {
 	usart_serial_options_t config;
@@ -129,18 +166,25 @@ int main (void)
 	SysTick_Config(sysclk_get_cpu_hz() / 1000); // 1 ms
 	config_console();
 	
+	
+	
 	usart_put_string(USART1, "Inicializando...\r\n");
 	usart_put_string(USART1, "Config HC05 Server...\r\n");
 	hm10_config_server();
 	hm10_server_init();
 	usart_put_string(USART1, "Config HC05 Client...\r\n");
+	
 	char buffer[1024];
+	
+	flag_online = 0;
+	not_connected = 1;
 	
 	while(1) {
 		//usart_put_string(USART0, "Tchau\n");
 		//usart_get_string(USART0, buffer, 1024, 1000);
 
-		if (usart_get_string(USART0, buffer, 1024, 1000)){
+		if (flag_online){
+			usart_get_string(USART0, buffer, 1024, 1000);
 			usart_log("Volume", buffer);
 		}
 	}
