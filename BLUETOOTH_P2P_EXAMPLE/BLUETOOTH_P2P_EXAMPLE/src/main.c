@@ -15,7 +15,7 @@
 volatile uint32_t g_systimer = 0;
 volatile uint8_t encoderPosCount = 0;
 volatile uint8_t pinALast;
-volatile uint8_t flag_encoder = 1;
+volatile uint8_t flag_encoder = 0;
 
 
 
@@ -166,20 +166,20 @@ void Encoder_init(void){
 	/* e configura sua prioridade  */
 	NVIC_EnableIRQ(EN_CLK_ID);
 	NVIC_SetPriority(EN_CLK_ID, 1);
-	/*
-	// pino DT
-	/* config. pino DT em modo de entrada 
+	
+	/*			PINO DT      */
+	//config. pino DT em modo de entrada 
 	pmc_enable_periph_clk(EN_DT_ID);
 	pio_set_input(EN_DT, EN_DT_PIN_MASK, PIO_PULLUP | PIO_DEBOUNCE);
 
-	/* indica funcao (but_Handler) a ser chamada quando houver uma interrupo
+	//indica funcao (but_Handler) a ser chamada quando houver uma interrupo
 	pio_enable_interrupt(EN_DT, EN_DT_PIN_MASK);// INTERRUPCAO
 	pio_handler_set(EN_DT,EN_DT_ID, EN_DT_PIN_MASK, PIO_IT_FALL_EDGE, Encoder_Handler);
 
-	/* e configura sua prioridade                       
+	//configura sua prioridade                       
 	NVIC_EnableIRQ(EN_DT_ID);
 	NVIC_SetPriority(EN_DT_ID, 0);
-	*/
+	
 	}
 
 
@@ -189,11 +189,21 @@ static void Encoder_Handler(uint32_t id, uint32_t mask){
 	//flag_encoder = 0;
 	//sprintf(buffer, "%d \n", encoderPosCount);
 	//usart_log("encoder", buffer);
-	int temp = encoderPosCount++;
+	
+	/*int temp = encoderPosCount++;
 	char temp_str[5];
 	itoa(temp, temp_str, 10);
-	usart_put_string(UART3, temp_str);
-	//flag_encoder = 1;
+	usart_put_string(UART3, temp_str);*/
+	usart_put_string(USART1, "irq...\r\n");
+			char buffer[54];
+			sprintf(buffer, "flag before %d \n", flag_encoder);
+			usart_put_string(USART1, buffer);
+
+	flag_encoder = 1;
+	
+			
+			sprintf(buffer, "flag after %d \n", flag_encoder);
+			usart_put_string(USART1, buffer);
 	//encoderPosCount++;
 	
 	/*
@@ -242,29 +252,31 @@ int main (void)
 	
 	pinALast = pio_get(EN_CLK, PIO_INPUT,  EN_CLK_PIN_MASK);
 	
-
-	
 	Encoder_init();
 
-	volatile uint32_t g_systimer = 0;
-	volatile uint8_t encoderPosCount = 0;
-	volatile uint8_t flag_encoder = 1;
+	g_systimer = 0;
+	encoderPosCount = 0;
+	flag_encoder = 0;
 
 	while(1) {
 		//usart_put_string(UART3, "OI\n");
 		//usart_get_string(UART3, buffer, 1024, 1000);
 		//usart_log("main", buffer);
 		
-
+		sprintf(buffer, "flag %d \n", flag_encoder);
+		usart_put_string(USART1, buffer);
+		delay_ms(500);
 		
-		if(!flag_encoder){
+		if(flag_encoder == 1){
+			usart_put_string(USART1, "entrou...\r\n");
+
 			sprintf(buffer, "%d \n", encoderPosCount);
 			usart_log("encoder", buffer);
-			int temp = encoderPosCount;
+			int temp = encoderPosCount++;
 			char temp_str[5];
 			itoa(temp, temp_str, 10);
 			usart_put_string(UART3, temp_str);
-			flag_encoder = 1;
+			flag_encoder = 0;
 		}
 		
 		//sprintf(buffer, "%d \n", encoderPosCount);
