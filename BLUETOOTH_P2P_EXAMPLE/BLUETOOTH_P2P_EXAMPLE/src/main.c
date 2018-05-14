@@ -7,6 +7,7 @@
  */
 #include <asf.h>
 #include <string.h>
+#include "conf_dacc_sinewave_example.h"
 
 /************************************************************************/
 /* variaveis globais                                                    */
@@ -51,11 +52,102 @@ void BUT_init();
 static void Button_Handler();
 
 /************************************************************************/
+/*									Defines			                    */
+/*************************************************************************/
+
+/** Analog control value */
+#if (SAMV70 || SAMV71 || SAME70 || SAMS70)
+#define DACC_ANALOG_CONTROL (DACC_ACR_IBCTLCH0(0x02) | DACC_ACR_IBCTLCH1(0x02))
+#else
+#define DACC_ANALOG_CONTROL (DACC_ACR_IBCTLCH0(0x02) \
+| DACC_ACR_IBCTLCH1(0x02) \
+| DACC_ACR_IBCTLDACCORE(0x01))
+#endif
+
+/** The maximal sine wave sample data (no sign) */
+#define MAX_DIGITAL   (0x7ff)
+/** The maximal (peak-peak) amplitude value */
+#define MAX_AMPLITUDE (DACC_MAX_DATA)
+/** The minimal (peak-peak) amplitude value */
+#define MIN_AMPLITUDE (100)
+
+/** SAMPLES per cycle */
+#define SAMPLES (100)
+
+/** Default frequency */
+#define DEFAULT_FREQUENCY 1000
+/** Min frequency */
+#define MIN_FREQUENCY   200
+/** Max frequency */
+#define MAX_FREQUENCY   3000
+
+/** Invalid value */
+#define VAL_INVALID     0xFFFFFFFF
+/************************************************************************/
 /* funcoes                                                              */
 /*************************************************************************/
 
+
+/*! Convert wave data to DACC value
+ *  Put the sinewave to an offset of max_amplitude/2.
+ *  \param wave          Waveform data
+ *  \param amplitude     Amplitude value
+ *  \param max_digital   Maximal digital value of input data (no sign)
+ *  \param max_amplitude Maximal amplitude value
+ */
+#define wave_to_dacc(wave, amplitude, max_digital, max_amplitude) \
+	(((int)(wave) * (amplitude) / (max_digital)) + (max_amplitude / 2))
+
+/** Current g_ul_index_sample */
+uint32_t g_ul_index_sample = 0;
+/** Frequency */
+uint32_t g_ul_frequency = 0;
+/** Amplitude */
+int32_t g_l_amplitude = 0;
+
+/** Waveform selector */
+uint8_t g_uc_wave_sel = 0;
+
+/** 100 points of sinewave samples, amplitude is MAX_DIGITAL*2 */
+const int16_t gc_us_sine_data[SAMPLES] = {
+	0x0,   0x080, 0x100, 0x17f, 0x1fd, 0x278, 0x2f1, 0x367, 0x3da, 0x449,
+	0x4b3, 0x519, 0x579, 0x5d4, 0x629, 0x678, 0x6c0, 0x702, 0x73c, 0x76f,
+	0x79b, 0x7bf, 0x7db, 0x7ef, 0x7fb, 0x7ff, 0x7fb, 0x7ef, 0x7db, 0x7bf,
+	0x79b, 0x76f, 0x73c, 0x702, 0x6c0, 0x678, 0x629, 0x5d4, 0x579, 0x519,
+	0x4b3, 0x449, 0x3da, 0x367, 0x2f1, 0x278, 0x1fd, 0x17f, 0x100, 0x080,
+
+	-0x0,   -0x080, -0x100, -0x17f, -0x1fd, -0x278, -0x2f1, -0x367, -0x3da, -0x449,
+	-0x4b3, -0x519, -0x579, -0x5d4, -0x629, -0x678, -0x6c0, -0x702, -0x73c, -0x76f,
+	-0x79b, -0x7bf, -0x7db, -0x7ef, -0x7fb, -0x7ff, -0x7fb, -0x7ef, -0x7db, -0x7bf,
+	-0x79b, -0x76f, -0x73c, -0x702, -0x6c0, -0x678, -0x629, -0x5d4, -0x579, -0x519,
+	-0x4b3, -0x449, -0x3da, -0x367, -0x2f1, -0x278, -0x1fd, -0x17f, -0x100, -0x080
+};
+
+
 void SysTick_Handler() {
-	g_systimer++;	
+	g_systimer++;
+	
+	//Coisas do dac
+	uint32_t status;
+	uint32_t dac_val;
+	
+	status = dacc_get_interrupt_status(DACC_BASE);
+
+	/* If ready for new data */
+	if ((status & DACC_ISR_TXRDY0) == DACC_ISR_TXRDY0) {
+		g_ul_index_sample++;
+		if (g_ul_index_sample >= SAMPLES) {
+			g_ul_index_sample = 0;
+		}
+		dac_val = g_uc_wave_sel ?
+				((g_ul_index_sample > SAMPLES / 2) ? 0 : MAX_AMPLITUDE)
+				: wave_to_dacc(gc_us_sine_data[g_ul_index_sample],
+					 g_l_amplitude,
+					 MAX_DIGITAL * 2, MAX_AMPLITUDE);
+
+		dacc_write_conversion_data(DACC_BASE, dac_val, DACC_CHANNEL);
+
+	}
 }
 
 void usart_put_string(Usart *usart, char str[]) {
@@ -235,7 +327,7 @@ int main (void)
 	g_systimer = 0;
 	encoderPosCount = 0;
 	flag_encoder = 0;
-	flag_but = 0;
+	flag_but = 1;
 
 	while(1) {
 		if (flag_but){

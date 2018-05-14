@@ -2,6 +2,8 @@
 # Automatically-generated file. Do not edit or delete the file
 ################################################################################
 
+src\ASF\sam\drivers\dacc\dacc.c
+
 src\ASF\sam\drivers\tc\tc.c
 
 src\ASF\sam\drivers\usart\usart.c
