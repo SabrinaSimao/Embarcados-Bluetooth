@@ -55,7 +55,7 @@ volatile uint32_t g_ul_value = 0;
 
 /* Canal do sensor de temperatura */
 #define AFEC_CHANNEL_TEMP_SENSOR 11
-#define canal_generico_pino 0//canal 0 = PD30
+#define canal_generico_pino 1//canal 1 = PA21
 
 uint32_t bufferA[16];
 uint32_t buffer_line = 0;
@@ -136,7 +136,7 @@ void TC0_Handler(void){
  */
 static void AFEC_Temp_callback(void)
 {
-	g_ul_value = afec_channel_get_value(AFEC0, canal_generico_pino);
+	g_ul_value = afec_channel_get_value(AFEC1, canal_generico_pino);
 	printf("Entrou \n");
 	is_conversion_done = true;
 }
@@ -172,7 +172,7 @@ static void config_ADC_TEMP(void){
    * Ativa e configura AFEC
    *************************************/  
   /* Ativa AFEC - 0 */
-	afec_enable(AFEC0);
+	afec_enable(AFEC1);
 
 	/* struct de configuracao do AFEC */
 	struct afec_config afec_cfg;
@@ -181,15 +181,15 @@ static void config_ADC_TEMP(void){
 	afec_get_config_defaults(&afec_cfg);
 
 	/* Configura AFEC */
-	afec_init(AFEC0, &afec_cfg);
+	afec_init(AFEC1, &afec_cfg);
   
 	/* Configura trigger por software */
-	afec_set_trigger(AFEC0, AFEC_TRIG_TIO_CH_0);
+	afec_set_trigger(AFEC1, AFEC_TRIG_TIO_CH_1);
 		
 	AFEC0->AFEC_MR |= 3;
   
 	/* configura call back */
-	afec_set_callback(AFEC0, AFEC_INTERRUPT_EOC_0,	AFEC_Temp_callback, 1); 
+	afec_set_callback(AFEC0, AFEC_INTERRUPT_EOC_1,	AFEC_Temp_callback, 1); 
    
 	/*** Configuracao específica do canal AFEC ***/
 	struct afec_ch_config afec_ch_cfg;
@@ -545,15 +545,19 @@ int main (void)
 				make_buffer(g_ul_value);
 				if (!not_full){
 					for(uint32_t i = 0; i < 16; i++){
-						dacc_write_conversion_data(DACC_BASE, bufferA[i], DACC_CHANNEL);//temporario
+						//dacc_write_conversion_data(DACC_BASE, bufferA[i], DACC_CHANNEL);//temporario
 						printf("BufferA : %d \r\n", bufferA[i]);
+						sprintf(buffer, "flag before %d \n", bufferA[i]);
+						usart_put_string(USART1, buffer);
 					}
 				}
 						
 				if(full_B){
 					for(uint32_t i = 0; i < 16; i++){
-						dacc_write_conversion_data(DACC_BASE, bufferB[i], DACC_CHANNEL);//temporario
+						//dacc_write_conversion_data(DACC_BASE, bufferB[i], DACC_CHANNEL);//temporario
 						printf("BufferB : %d \r\n", bufferB[i]);
+						sprintf(buffer, "flag before %d \n", bufferB[i]);
+						usart_put_string(USART1, buffer);
 					}
 				}
 				//printf("Temp : %d \r\n", convert_adc_to_temp(g_ul_value));
