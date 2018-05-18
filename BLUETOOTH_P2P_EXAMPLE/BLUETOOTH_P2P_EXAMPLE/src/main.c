@@ -61,8 +61,8 @@ uint32_t bufferA[16];
 uint32_t buffer_line = 0;
 uint32_t bufferB[16];
 uint32_t buffer_line2 = 0;
-int8_t not_full = 1;
-int8_t full_B = 0;
+volatile int8_t not_full = 1;
+volatile int8_t full_B = 0;
 
 static void Encoder_Handler();
 void config_console();
@@ -136,7 +136,7 @@ void TC0_Handler(void){
  */
 static void AFEC_Temp_callback(void)
 {
-	g_ul_value = afec_channel_get_value(AFEC1, canal_generico_pino);
+	g_ul_value = afec_channel_get_value(AFEC0, canal_generico_pino);
 	printf("Entrou \n");
 	is_conversion_done = true;
 }
@@ -172,7 +172,7 @@ static void config_ADC_TEMP(void){
    * Ativa e configura AFEC
    *************************************/  
   /* Ativa AFEC - 0 */
-	afec_enable(AFEC1);
+	afec_enable(AFEC0);
 
 	/* struct de configuracao do AFEC */
 	struct afec_config afec_cfg;
@@ -181,10 +181,10 @@ static void config_ADC_TEMP(void){
 	afec_get_config_defaults(&afec_cfg);
 
 	/* Configura AFEC */
-	afec_init(AFEC1, &afec_cfg);
+	afec_init(AFEC0, &afec_cfg);
   
 	/* Configura trigger por software */
-	afec_set_trigger(AFEC1, AFEC_TRIG_TIO_CH_1);
+	afec_set_trigger(AFEC0, AFEC_TRIG_TIO_CH_1);
 		
 	AFEC0->AFEC_MR |= 3;
   
@@ -302,9 +302,9 @@ const int16_t gc_us_sine_data[SAMPLES] = {
 void SysTick_Handler() {
 	g_systimer++;
 	
-	/*
 	
-	//Coisas do dac
+	
+	//Coisas do dacc
 	uint32_t status;
 	uint32_t dac_val;
 	
@@ -326,7 +326,7 @@ void SysTick_Handler() {
 
 		dacc_write_conversion_data(DACC_BASE, dac_val, DACC_CHANNEL);
 		
-	}*/
+	}
 }
 
 void usart_put_string(Usart *usart, char str[]) {
@@ -428,7 +428,7 @@ void Encoder_init(void){
 static void Encoder_Handler(uint32_t id, uint32_t mask){
 	
 	char buffer[42];
-	sprintf(buffer, "flag before %d \n", flag_encoder);
+	sprintf(buffer, "flag before encoder %d \n", flag_encoder);
 	usart_put_string(USART1, buffer);
 			
 	volatile uint8_t aVal = pio_get(EN_CLK, PIO_INPUT,  EN_CLK_PIN_MASK);// digitalRead(pinA)?
@@ -489,25 +489,20 @@ int main (void)
 	config_console();
 		
 	usart_put_string(USART1, "Inicializando...\r\n");
-	/*
-	usart_put_string(USART1, "Config HC05 Server...\r\n");
-	hm10_config_server();
-	hm10_server_init();
-	*/
 	usart_put_string(USART1, "Config HC05 Client...\r\n");
-	hm10_config_client(); 
-	hm10_client_init();
+	//hm10_config_client(); 
+	//hm10_client_init();
 	char buffer[1024];
 	
-	pinALast = pio_get(EN_CLK, PIO_INPUT,  EN_CLK_PIN_MASK);
+	//pinALast = pio_get(EN_CLK, PIO_INPUT,  EN_CLK_PIN_MASK);
 	
-	Encoder_init();
-	BUT_init();
+	//Encoder_init();
+	//BUT_init();
 
 	g_systimer = 0;
-	encoderPosCount = 0;
-	flag_encoder = 0;
-	flag_but = 1;
+	//encoderPosCount = 0;
+	//flag_encoder = 0;
+	//flag_but = 1;
 	
 	// ADC
 	/* inicializa e configura adc */

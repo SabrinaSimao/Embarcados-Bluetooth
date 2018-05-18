@@ -33,9 +33,9 @@ Idx Name          Size      VMA       LMA       File off  Algn
                   CONTENTS, READONLY, DEBUGGING
  14 .debug_line   0000d0dd  00000000  00000000  00062897  2**0
                   CONTENTS, READONLY, DEBUGGING
- 15 .debug_str    0008c631  00000000  00000000  0006f974  2**0
+ 15 .debug_str    0008c67d  00000000  00000000  0006f974  2**0
                   CONTENTS, READONLY, DEBUGGING
- 16 .debug_frame  00002524  00000000  00000000  000fbfa8  2**2
+ 16 .debug_frame  00002524  00000000  00000000  000fbff4  2**2
                   CONTENTS, READONLY, DEBUGGING
 
 Disassembly of section .text:
@@ -847,63 +847,63 @@ static inline void afec_channel_set_analog_offset(Afec *const afec,
   4005d0:	4591      	cmp	r9, r2
   4005d2:	d1fb      	bne.n	4005cc <main+0x124>
 	}
+	for (int i = 0; i < 16; i++){
+		bufferB[i] = 0;
+	}
+  4005d4:	4d37      	ldr	r5, [pc, #220]	; (4006b4 <main+0x20c>)
 	
 	while (1) {
-		if(is_conversion_done == true) {
-  4005d4:	4d37      	ldr	r5, [pc, #220]	; (4006b4 <main+0x20c>)
-			is_conversion_done = false;
-			make_buffer(g_ul_value);
   4005d6:	f8df b100 	ldr.w	fp, [pc, #256]	; 4006d8 <main+0x230>
+			if(full_B){
+				for(uint32_t i = 0; i < 16; i++){
+					printf("BufferB : %d \r\n", bufferB[i]);
 				}
 			}
 			//printf("Temp : %d \r\n", convert_adc_to_temp(g_ul_value));
-			
-			//afec_start_software_conversion(AFEC0);
-			delay_s(1);
   4005da:	f8df a100 	ldr.w	sl, [pc, #256]	; 4006dc <main+0x234>
   4005de:	e002      	b.n	4005e6 <main+0x13e>
   4005e0:	4650      	mov	r0, sl
   4005e2:	4b35      	ldr	r3, [pc, #212]	; (4006b8 <main+0x210>)
   4005e4:	4798      	blx	r3
-		if(is_conversion_done == true) {
+	}
   4005e6:	782b      	ldrb	r3, [r5, #0]
   4005e8:	2b00      	cmp	r3, #0
   4005ea:	d0fc      	beq.n	4005e6 <main+0x13e>
-			is_conversion_done = false;
+	
   4005ec:	2300      	movs	r3, #0
   4005ee:	702b      	strb	r3, [r5, #0]
-			make_buffer(g_ul_value);
+	while (1) {
   4005f0:	f8db 0000 	ldr.w	r0, [fp]
   4005f4:	4b31      	ldr	r3, [pc, #196]	; (4006bc <main+0x214>)
   4005f6:	4798      	blx	r3
-			if (!not_full){
+		if(is_conversion_done == true) {
   4005f8:	4b31      	ldr	r3, [pc, #196]	; (4006c0 <main+0x218>)
   4005fa:	f993 3000 	ldrsb.w	r3, [r3]
   4005fe:	b943      	cbnz	r3, 400612 <main+0x16a>
   400600:	4c2b      	ldr	r4, [pc, #172]	; (4006b0 <main+0x208>)
-					printf("BufferA : %d \r\n", bufferA[i]);
+			make_buffer(g_ul_value);
   400602:	4f30      	ldr	r7, [pc, #192]	; (4006c4 <main+0x21c>)
   400604:	4e30      	ldr	r6, [pc, #192]	; (4006c8 <main+0x220>)
   400606:	f854 1f04 	ldr.w	r1, [r4, #4]!
   40060a:	4638      	mov	r0, r7
   40060c:	47b0      	blx	r6
-				for(uint32_t i = 0; i < 16; i++){
+			is_conversion_done = false;
   40060e:	45a1      	cmp	r9, r4
   400610:	d1f9      	bne.n	400606 <main+0x15e>
-			if(full_B){
+				}
   400612:	4b2e      	ldr	r3, [pc, #184]	; (4006cc <main+0x224>)
   400614:	f993 3000 	ldrsb.w	r3, [r3]
   400618:	2b00      	cmp	r3, #0
   40061a:	d0e1      	beq.n	4005e0 <main+0x138>
   40061c:	2410      	movs	r4, #16
-					printf("BufferB : %d \r\n", bufferB);
+			
   40061e:	f8df 80c0 	ldr.w	r8, [pc, #192]	; 4006e0 <main+0x238>
   400622:	4f2b      	ldr	r7, [pc, #172]	; (4006d0 <main+0x228>)
   400624:	4e28      	ldr	r6, [pc, #160]	; (4006c8 <main+0x220>)
   400626:	4641      	mov	r1, r8
   400628:	4638      	mov	r0, r7
   40062a:	47b0      	blx	r6
-				for(uint32_t i = 0; i < 16; i++){
+			}
   40062c:	3c01      	subs	r4, #1
   40062e:	d1fa      	bne.n	400626 <main+0x17e>
   400630:	e7d6      	b.n	4005e0 <main+0x138>
@@ -1479,6 +1479,12 @@ __attribute__( ( always_inline ) ) __STATIC_INLINE uint8_t __CLZ(uint32_t value)
   40094c:	f3bf 8f4f 	dsb	sy
   __ASM volatile ("isb");
   400950:	f3bf 8f6f 	isb	sy
+ *
+ * \param ul_id Id (number) of the peripheral clock.
+ */
+static inline void sysclk_enable_peripheral_clock(uint32_t ul_id)
+{
+	pmc_enable_periph_clk(ul_id);
   400954:	200a      	movs	r0, #10
   400956:	4c2f      	ldr	r4, [pc, #188]	; (400a14 <board_init+0x188>)
   400958:	47a0      	blx	r4
@@ -3066,14 +3072,30 @@ void Dummy_Handler(void)
   401196:	4b19      	ldr	r3, [pc, #100]	; (4011fc <Reset_Handler+0xb4>)
   401198:	f023 037f 	bic.w	r3, r3, #127	; 0x7f
   40119c:	6093      	str	r3, [r2, #8]
+ */
+__attribute__( ( always_inline ) ) __STATIC_INLINE uint32_t __get_PRIMASK(void)
+{
+  uint32_t result;
+
   __ASM volatile ("MRS %0, primask" : "=r" (result) );
   40119e:	f3ef 8310 	mrs	r3, PRIMASK
+static volatile uint32_t cpu_irq_critical_section_counter;
+static volatile bool     cpu_irq_prev_interrupt_state;
+
+static inline irqflags_t cpu_irq_save(void)
+{
 	volatile irqflags_t flags = cpu_irq_is_enabled();
   4011a2:	fab3 f383 	clz	r3, r3
   4011a6:	095b      	lsrs	r3, r3, #5
   4011a8:	9301      	str	r3, [sp, #4]
   __ASM volatile ("cpsid i" : : : "memory");
   4011aa:	b672      	cpsid	i
+    This function ensures the apparent order of the explicit memory operations before
+    and after the instruction, without ensuring their completion.
+ */
+__attribute__( ( always_inline ) ) __STATIC_INLINE void __DMB(void)
+{
+  __ASM volatile ("dmb");
   4011ac:	f3bf 8f5f 	dmb	sy
 	cpu_irq_disable();
   4011b0:	2200      	movs	r2, #0
@@ -3095,6 +3117,11 @@ __always_inline static void fpu_enable(void)
   4011c2:	f3bf 8f4f 	dsb	sy
   __ASM volatile ("isb");
   4011c6:	f3bf 8f6f 	isb	sy
+	return (flags);
+}
+
+static inline void cpu_irq_restore(irqflags_t flags)
+{
 	if (cpu_irq_is_enabled_flags(flags))
   4011ca:	b129      	cbz	r1, 4011d8 <Reset_Handler+0x90>
 		cpu_irq_enable();
