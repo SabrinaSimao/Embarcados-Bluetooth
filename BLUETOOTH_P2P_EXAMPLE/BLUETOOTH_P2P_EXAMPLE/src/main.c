@@ -54,7 +54,6 @@ volatile bool is_conversion_done = false;
 volatile uint32_t g_ul_value = 0;
 
 /* Canal do sensor de temperatura */
-#define AFEC_CHANNEL_TEMP_SENSOR 11
 #define canal_generico_pino 1//canal 1 = PA21
 
 uint32_t bufferA[16];
@@ -63,6 +62,7 @@ uint32_t bufferB[16];
 uint32_t buffer_line2 = 0;
 volatile int8_t not_full = 1;
 volatile int8_t full_B = 0;
+uint32_t dac_val;
 
 static void Encoder_Handler();
 void config_console();
@@ -124,7 +124,7 @@ void TC0_Handler(void){
 	* Devemos indicar ao TC que a interrupção foi satisfeita.
 	******************************************************************/
 	ul_dummy = tc_get_status(TC0, 0);
-	printf("kakaka \n");
+	//printf("kakaka \n");
 
 	/* Avoid compiler warning */
 	UNUSED(ul_dummy);
@@ -134,11 +134,17 @@ void TC0_Handler(void){
 /**
  * \brief AFEC interrupt callback function.
  */
-static void AFEC_Temp_callback(void)
-{
-	g_ul_value = afec_channel_get_value(AFEC0, canal_generico_pino);
-	printf("Entrou \n");
-	is_conversion_done = true;
+static void AFEC_Temp_callback(void){
+	
+	uint32_t status;
+	volatile uint32_t value;
+	value = afec_channel_get_value(AFEC0, canal_generico_pino);
+	
+	status = dacc_get_interrupt_status(DACC_BASE);
+
+	dacc_write_conversion_data(DACC_BASE, value, DACC_CHANNEL);
+	
+	//is_conversion_done = true;
 }
 
 void make_buffer(uint32_t ADC_value){
@@ -184,7 +190,7 @@ static void config_ADC_TEMP(void){
 	afec_init(AFEC0, &afec_cfg);
   
 	/* Configura trigger por software */
-	afec_set_trigger(AFEC0, AFEC_TRIG_TIO_CH_1);
+	afec_set_trigger(AFEC0, AFEC_TRIG_TIO_CH_0);
 		
 	AFEC0->AFEC_MR |= 3;
   
@@ -202,13 +208,14 @@ static void config_ADC_TEMP(void){
 	* Because the internal ADC offset is 0x200, it should cancel it and shift
 	 down to 0.
 	 */
-	afec_channel_set_analog_offset(AFEC0, canal_generico_pino, 0x200);
+	afec_channel_set_analog_offset(AFEC0, canal_generico_pino, 0x000);
 
 	/***  Configura sensor de temperatura ***/
 	struct afec_temp_sensor_config afec_temp_sensor_cfg;
 
 	afec_temp_sensor_get_config_defaults(&afec_temp_sensor_cfg);
 	afec_temp_sensor_set_config(AFEC0, &afec_temp_sensor_cfg);
+	//pio_pull_down(PIOA, (1u) << 21, 1);
 
 	/* Selecina canal e inicializa conversão */  
 	afec_channel_enable(AFEC0, canal_generico_pino);
@@ -244,14 +251,15 @@ void TC_init(Tc * TC, int ID_TC, int TC_CHANNEL, int freq){
 							| TC_CMR_CPCTRG /* UP mode with automatic trigger on RC Compare */
 	);
 	
-	tc_write_ra(TC, TC_CHANNEL, 2*65532/3);
-	tc_write_rc(TC, TC_CHANNEL, 3*65532/3);
+	tc_write_rc(TC, TC_CHANNEL, (ul_sysclk / ul_div) / freq);
+	tc_write_ra(TC, TC_CHANNEL, (ul_sysclk / ul_div) / 32);
+	//tc_write_rc(TC, TC_CHANNEL, 3*65532/3);
 
 	//tc_write_rc(TC, TC_CHANNEL, (ul_sysclk / ul_div) / freq);
 
 	/* Configura e ativa interrupçcão no TC canal 0 */
 	/* Interrupção no C */
-	NVIC_EnableIRQ((IRQn_Type) ID_TC);
+	//NVIC_EnableIRQ((IRQn_Type) ID_TC);
 //	tc_enable_interrupt(TC, TC_CHANNEL, TC_IER_CPCS);
 
 	/* Inicializa o canal 0 do TC */
@@ -302,16 +310,14 @@ const int16_t gc_us_sine_data[SAMPLES] = {
 void SysTick_Handler() {
 	g_systimer++;
 	
-	
-	
 	//Coisas do dacc
 	uint32_t status;
-	uint32_t dac_val;
+	
 	
 	status = dacc_get_interrupt_status(DACC_BASE);
 
 	//If ready for new data
-	
+	/*
 	if ((status & DACC_ISR_TXRDY0) == DACC_ISR_TXRDY0) {
 		g_ul_index_sample++;
 		if (g_ul_index_sample >= SAMPLES) {
@@ -322,11 +328,11 @@ void SysTick_Handler() {
 				: wave_to_dacc(gc_us_sine_data[g_ul_index_sample],
 					 g_l_amplitude,
 					 MAX_DIGITAL * 2, MAX_AMPLITUDE);
-		
+		*/
 
 		dacc_write_conversion_data(DACC_BASE, dac_val, DACC_CHANNEL);
 		
-	}
+	
 }
 
 void usart_put_string(Usart *usart, char str[]) {
@@ -362,6 +368,8 @@ void usart_log(char* name, char* log) {
 }
 
 void config_console(void) {
+	sysclk_enable_peripheral_clock(ID_USART1);
+
 	usart_serial_options_t config;
 	config.baudrate = 115200;
 	config.charlength = US_MR_CHRL_8_BIT;
@@ -371,6 +379,7 @@ void config_console(void) {
 	usart_enable_tx(USART1);
 	usart_enable_rx(USART1);
 }
+
 
 void hm10_config_client(void) {
 	usart_serial_options_t config;
@@ -484,12 +493,12 @@ int main (void)
 	/* Disable the watchdog */
 	WDT->WDT_MR = WDT_MR_WDDIS;
 
-	delay_init(sysclk_get_cpu_hz());
-	SysTick_Config(sysclk_get_cpu_hz() / 1000); // 1 ms
-	config_console();
+	//delay_init(sysclk_get_cpu_hz());
+	//SysTick_Config(sysclk_get_cpu_hz() / 1000); // 1 ms
+	//config_console();
 		
-	usart_put_string(USART1, "Inicializando...\r\n");
-	usart_put_string(USART1, "Config HC05 Client...\r\n");
+	//usart_put_string(USART1, "Inicializando...\r\n");
+	//usart_put_string(USART1, "Config HC05 Client...\r\n");
 	//hm10_config_client(); 
 	//hm10_client_init();
 	char buffer[1024];
@@ -503,87 +512,102 @@ int main (void)
 	//encoderPosCount = 0;
 	//flag_encoder = 0;
 	//flag_but = 1;
-	
-	// ADC
-	/* inicializa e configura adc */
-	config_ADC_TEMP();
-		
-	/* Output example information. */
-	puts(STRING_HEADER);
-		
-	TC_init(TC0, ID_TC0, 0, 5);
-		
+	//
 	pmc_enable_periph_clk(ID_PIOA);
 	pio_set_output(PIOA, 1, 0, 0, 0);
 	pio_set_peripheral(PIOA, PIO_PERIPH_B, 1);
+	
+	// ADC
+	/* inicializa e configura adc */
+	
+	
+
+	/* Enable clock for DACC */
+	sysclk_enable_peripheral_clock(DACC_ID);
+
+	/* Reset DACC registers */
+	dacc_reset(DACC_BASE);
+	dacc_enable_channel(DACC_BASE, DACC_CHANNEL);
+
+	//dacc_write_conversion_data(DACC_BASE, 1024,DACC_CHANNEL);
+	
+	config_ADC_TEMP();		
+	/* Output example information. */
+	//puts(STRING_HEADER);
+		
+	TC_init(TC0, ID_TC0, 0, 5000);
+		
 		
 	/* incializa conversão ADC */
-	afec_start_software_conversion(AFEC0);
+	//afec_start_software_conversion(AFEC0);
 		
+		/*
 	for (int i = 0; i < 16; i++){
 		bufferA[i] = 0;
 	}
 	for (int i = 0; i < 16; i++){
 		bufferB[i] = 0;
 	}
+	*/
 	// final ADC
 
 	while(1) {
-		if (flag_but){
-			//usart_put_string(UART3, "OI\n");
-			//usart_get_string(UART3, buffer, 1024, 1000);
-			//usart_log("main", buffer);
-			
-			// AFEC
-			if(is_conversion_done == true) {
-				is_conversion_done = false;
-				make_buffer(g_ul_value);
-				if (!not_full){
-					for(uint32_t i = 0; i < 16; i++){
-						//dacc_write_conversion_data(DACC_BASE, bufferA[i], DACC_CHANNEL);//temporario
-						printf("BufferA : %d \r\n", bufferA[i]);
-						sprintf(buffer, "flag before %d \n", bufferA[i]);
-						usart_put_string(USART1, buffer);
-					}
-				}
-						
-				if(full_B){
-					for(uint32_t i = 0; i < 16; i++){
-						//dacc_write_conversion_data(DACC_BASE, bufferB[i], DACC_CHANNEL);//temporario
-						printf("BufferB : %d \r\n", bufferB[i]);
-						sprintf(buffer, "flag before %d \n", bufferB[i]);
-						usart_put_string(USART1, buffer);
-					}
-				}
-				//printf("Temp : %d \r\n", convert_adc_to_temp(g_ul_value));
-						
-				//afec_start_software_conversion(AFEC0);
-				delay_ms(1);
-			}
-			
-			//Bluetooth
-			/*		
-			sprintf(buffer, "flag %d \n", flag_encoder);
-			usart_put_string(USART1, buffer);
-			delay_ms(500);
 		
-			if(flag_encoder == 1){
-				usart_put_string(USART1, "entrou...\r\n");
-
-				sprintf(buffer, "%d \n", encoderPosCount);
-				usart_log("encoder", buffer);
-				int temp = encoderPosCount;
-				char temp_str[5];
-				itoa(temp, temp_str, 10);
-				usart_put_string(UART3, temp_str);
-				flag_encoder = 0;
-			}
-			*/
-		
-		}
-		
-		//sprintf(buffer, "%d \n", encoderPosCount);
-		//usart_log("encoder", buffer);
+		//if (flag_but){
+		//	//usart_put_string(UART3, "OI\n");
+		//	//usart_get_string(UART3, buffer, 1024, 1000);
+		//	//usart_log("main", buffer);
+		//	
+		//	// AFEC
+		//	if(is_conversion_done == true) {
+		//		is_conversion_done = false;
+		//		make_buffer(g_ul_value);
+		//		if (!not_full){
+		//			for(uint32_t i = 0; i < 16; i++){
+		//				//dacc_write_conversion_data(DACC_BASE, bufferA[i], DACC_CHANNEL);//temporario
+		//				printf("BufferA : %d \r\n", bufferA[i]);
+		//				sprintf(buffer, "flag before %d \n", bufferA[i]);
+		//				usart_put_string(USART1, buffer);
+		//			}
+		//		}
+		//				
+		//		if(full_B){
+		//			for(uint32_t i = 0; i < 16; i++){
+		//				//dacc_write_conversion_data(DACC_BASE, bufferB[i], DACC_CHANNEL);//temporario
+		//				printf("BufferB : %d \r\n", bufferB[i]);
+		//				sprintf(buffer, "flag before %d \n", bufferB[i]);
+		//				usart_put_string(USART1, buffer);
+		//			}
+		//		}
+		//		//printf("Temp : %d \r\n", convert_adc_to_temp(g_ul_value));
+		//				
+		//		//afec_start_software_conversion(AFEC0);
+		//		delay_ms(1);
+		//	}
+		//	
+		//	//Bluetooth
+		//	/*		
+		//	sprintf(buffer, "flag %d \n", flag_encoder);
+		//	usart_put_string(USART1, buffer);
+		//	delay_ms(500);
+		//
+		//	if(flag_encoder == 1){
+		//		usart_put_string(USART1, "entrou...\r\n");
+		//
+		//		sprintf(buffer, "%d \n", encoderPosCount);
+		//		usart_log("encoder", buffer);
+		//		int temp = encoderPosCount;
+		//		char temp_str[5];
+		//		itoa(temp, temp_str, 10);
+		//		usart_put_string(UART3, temp_str);
+		//		flag_encoder = 0;
+		//	}
+		//	*/
+		//
+		//}
+		//
+		////sprintf(buffer, "%d \n", encoderPosCount);
+		////usart_log("encoder", buffer);
 		
 	}
 	
