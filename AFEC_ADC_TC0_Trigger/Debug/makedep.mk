@@ -2,6 +2,10 @@
 # Automatically-generated file. Do not edit or delete the file
 ################################################################################
 
+src\ASF\sam\drivers\dacc\dacc.c
+
+src\ping_pong_buffer.c
+
 src\main.c
 
 src\ASF\common\services\delay\sam\cycle_counter.c

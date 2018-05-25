@@ -41,7 +41,7 @@ volatile uint32_t flag_but = 0;
 #define BUT_PIN_MASK			  (1 << BUT_PIN)
 #define BUT_DEBOUNCING_VALUE  79
 
-#define buffer_size 1024
+#define buffer_siz 1024
 
 /** Reference voltage for AFEC,in mv. */
 #define VOLT_REF        (3300)
@@ -57,9 +57,9 @@ volatile bool is_conversion_done = false;
 volatile uint32_t g_ul_value = 0;
 
 /* Canal do sensor de temperatura */
-#define canal_generico_pino 1//canal 1 = PA21
+#define canal_generico_pino 0//canal 1 = PA21
 
-unsigned uint32_t buf  = 0;
+volatile uint32_t buf = 0;
 uint32_t dac_val;
 
 int bufferTxindex = 0;
@@ -116,7 +116,7 @@ static void Button_Handler();
 /** Invalid value */
 #define VAL_INVALID     0xFFFFFFFF
 
-PPBUF_DECLARE(buffer,buffer_size);
+//PPBUF_DECLARE(buffer,buffer_siz);
 /************************************************************************/
 /* funcoes    ADC                                                       */
 /*************************************************************************/
@@ -143,20 +143,25 @@ static void AFEC_Temp_callback(void){
 
 
 	uint32_t status;
-	volatile uint32_t data;
+	uint32_t data = 0;
 	
 	/*gets data from afec*/
 	data = afec_channel_get_value(AFEC0, canal_generico_pino);
 	
-	while(ppbuf_get_full_signal(&buffer,false) != true) {
-		ppbuf_insert_active(&buffer, &data, sizeof(data));
-		
-		/* gets the data on the pong buffer */
-		ppbuf_remove_inactive(&buffer, &buf, sizeof(buf));	
+	/*
+	// check swap
+	if(ppbuf_get_full_signal(&buffer,false) == true) {
+		ppbuf_get_full_signal(&buffer,true); // swap
 	}
+	
+	ppbuf_insert_active(&buffer, &data, sizeof(data));
+		
+	/* gets the data on the pong buffer */
+	//ppbuf_remove_inactive(&buffer, &buf, sizeof(buf));	
+	
 	/*writes on dacc*/
 	status = dacc_get_interrupt_status(DACC_BASE);
-	dacc_write_conversion_data(DACC_BASE, buf, DACC_CHANNEL);
+	dacc_write_conversion_data(DACC_BASE, data, DACC_CHANNEL);
 }
 
 
@@ -183,7 +188,7 @@ static void config_ADC_TEMP(void){
 	AFEC0->AFEC_MR |= 3;
   
 	/* configura call back */
-	afec_set_callback(AFEC0, AFEC_INTERRUPT_EOC_1,	AFEC_Temp_callback, 1); 
+	afec_set_callback(AFEC0, AFEC_INTERRUPT_EOC_0,	AFEC_Temp_callback, 1); 
    
 	/*** Configuracao específica do canal AFEC ***/
 	struct afec_ch_config afec_ch_cfg;
@@ -196,7 +201,7 @@ static void config_ADC_TEMP(void){
 	* Because the internal ADC offset is 0x200, it should cancel it and shift
 	 down to 0.
 	 */
-	afec_channel_set_analog_offset(AFEC0, canal_generico_pino, 0x000);
+	afec_channel_set_analog_offset(AFEC0, canal_generico_pino, 0);
 
 	/***  Configura sensor de temperatura ***/
 	struct afec_temp_sensor_config afec_temp_sensor_cfg;
@@ -302,10 +307,10 @@ void SysTick_Handler() {
 	g_systimer++;
 	
 	//Coisas do dacc
-	uint32_t status;
+	//uint32_t status;
 	
 	
-	status = dacc_get_interrupt_status(DACC_BASE);
+	//status = dacc_get_interrupt_status(DACC_BASE);
 
 	//If ready for new data
 	/*
@@ -321,7 +326,7 @@ void SysTick_Handler() {
 					 MAX_DIGITAL * 2, MAX_AMPLITUDE);
 		*/
 
-		dacc_write_conversion_data(DACC_BASE, dac_val, DACC_CHANNEL);
+		//dacc_write_conversion_data(DACC_BASE, dac_val, DACC_CHANNEL);
 		
 	
 }
@@ -370,7 +375,6 @@ void config_console(void) {
 	usart_enable_tx(USART1);
 	usart_enable_rx(USART1);
 }
-
 
 void hm10_config_client(void) {
 	usart_serial_options_t config;
@@ -422,7 +426,6 @@ void Encoder_init(void){
 	NVIC_SetPriority(EN_CLK_ID, 1);
 	
 	}
-
 
 
 static void Encoder_Handler(uint32_t id, uint32_t mask){

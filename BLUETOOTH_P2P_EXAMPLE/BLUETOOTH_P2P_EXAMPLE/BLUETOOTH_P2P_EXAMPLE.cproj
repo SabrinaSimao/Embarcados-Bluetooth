@@ -627,6 +627,9 @@
     <Compile Include="src\PingPong.h">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="src\ping_pong_buffer.c">
+      <SubType>compile</SubType>
+    </Compile>
     <None Include="src\ASF\common\services\sleepmgr\sleepmgr.h">
       <SubType>compile</SubType>
     </None>

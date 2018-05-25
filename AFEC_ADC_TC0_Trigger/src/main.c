@@ -15,11 +15,11 @@
 #include <string.h>
 #include <assert.h>
 #include "asf.h"
+#include "PingPong.h"
 
 /************************************************************************/
 /* Defines                                                              */
 /************************************************************************/
-
 
 /** Header printf */
 #define STRING_EOL    "\r"
@@ -27,29 +27,20 @@
 "-- "BOARD_NAME" --\r\n" \
 "-- Compiled: "__DATE__" "__TIME__" --"STRING_EOL
 
-/** Reference voltage for AFEC,in mv. */
-#define VOLT_REF        (3300)
 
-/** The maximal digital value */
-/** 2^12 - 1                  */
-#define MAX_DIGITAL     (4095UL)
+#define canal_generico_pino 1//canal 0 = PD30
 
-/** The conversion data is done flag */
-volatile bool is_conversion_done = false;
+//! DAC channel used for test
+#define DACC_CHANNEL        0 // (PB13)
+//! DAC register base for test
+#define DACC_BASE           DACC
+//! DAC ID for test
+#define DACC_ID             ID_DACC
 
-/** The conversion data value */
-volatile uint32_t g_ul_value = 0;
-
-/* Canal do sensor de temperatura */
-#define AFEC_CHANNEL_TEMP_SENSOR 11
-#define canal_generico_pino 0//canal 0 = PD30
-
-uint32_t bufferA[16];
-uint32_t buffer_line = 0;
-uint32_t bufferB[16];
-uint32_t buffer_line2 = 0;
-int8_t not_full = 1;
-int8_t full_B = 0;
+/************************************************************************/
+/*                                                                      */
+/************************************************************************/
+void TC_init(Tc * TC, int ID_TC, int TC_CHANNEL, int freq);
 
 /************************************************************************/
 /* Callbacks / Handler                                                 */
@@ -74,11 +65,33 @@ void TC0_Handler(void){
 /**
  * \brief AFEC interrupt callback function.
  */
-static void AFEC_Temp_callback(void)
-{
+
+PPBUF_DECLARE(buffer,120000);
+volatile uint32_t buf = 0;
+
+static void AFEC_Temp_callback(void){	
+	/** The conversion data value */
+	uint32_t g_ul_value = 0;
+
 	g_ul_value = afec_channel_get_value(AFEC0, canal_generico_pino);
-	printf("Entrou \n");
-	is_conversion_done = true;
+	
+
+	// check swap
+	if(ppbuf_get_full_signal(&buffer,false) == true) {
+		ppbuf_get_full_signal(&buffer,true); // swap
+	}
+	
+	ppbuf_insert_active(&buffer, &g_ul_value, sizeof(g_ul_value));
+		
+	/* gets the data on the pong buffer */
+	ppbuf_remove_inactive(&buffer, &buf, sizeof(buf));	
+	
+    dacc_get_interrupt_status(DACC_BASE);
+	if ((buffer.ping == 0)){
+		dacc_write_conversion_data(DACC_BASE, buf/2, DACC_CHANNEL);
+	}else{
+		dacc_write_conversion_data(DACC_BASE, buf, DACC_CHANNEL);
+	}
 }
 
 /************************************************************************/
@@ -107,37 +120,6 @@ static void configure_console(void)
 	stdio_serial_init(CONF_UART, &uart_serial_options);
 }
 
-/** 
- * converte valor lido do ADC para temperatura em graus celsius
- * input : ADC reg value
- * output: Temperature in celsius
- */
-void make_buffer(uint32_t ADC_value){
-
-	
-	if(not_full){
-		bufferA[buffer_line] = ADC_value;
-//		printf("BufferA : %d \r\n", bufferA);
-		buffer_line++;
-		if (buffer_line == 15){
-			not_full = 0;
-			buffer_line = 0;
-			full_B = 0;
-		}
-		
-	} else{
-		bufferB[buffer_line2] = ADC_value;
-		buffer_line2++;
-		if (buffer_line2 ==15){
-			not_full = 1;
-			buffer_line2 = 0;
-			full_B = 1;
-		}
-		
-	}
-	
-}
-
 static void config_ADC_TEMP(void){
 /************************************* 
    * Ativa e configura AFEC
@@ -160,7 +142,7 @@ static void config_ADC_TEMP(void){
 	AFEC0->AFEC_MR |= 3;
   
 	/* configura call back */
-	afec_set_callback(AFEC0, AFEC_INTERRUPT_EOC_0,	AFEC_Temp_callback, 1); 
+	afec_set_callback(AFEC0, AFEC_INTERRUPT_EOC_1,	AFEC_Temp_callback, 1); 
    
 	/*** Configuracao específica do canal AFEC ***/
 	struct afec_ch_config afec_ch_cfg;
@@ -185,6 +167,15 @@ static void config_ADC_TEMP(void){
 	afec_channel_enable(AFEC0, canal_generico_pino);
 }
 
+static void config_DAC(void){
+	/* Enable clock for DACC */
+	sysclk_enable_peripheral_clock(DACC_ID);
+
+	/* Reset DACC registers */
+	dacc_reset(DACC_BASE);
+	dacc_enable_channel(DACC_BASE, DACC_CHANNEL);
+}
+
 /**
 * Configura TimerCounter (TC) para gerar uma interrupcao no canal (ID_TC e TC_CHANNEL)
 * na taxa de especificada em freq.
@@ -193,8 +184,6 @@ void TC_init(Tc * TC, int ID_TC, int TC_CHANNEL, int freq){
 	uint32_t ul_div;
 	uint32_t ul_tcclks;
 	uint32_t ul_sysclk = sysclk_get_cpu_hz();
-
-	uint32_t channel = 1;
 
 	/* Configura o PMC */
 	/* O TimerCounter é meio confuso
@@ -208,6 +197,9 @@ void TC_init(Tc * TC, int ID_TC, int TC_CHANNEL, int freq){
 	/** Configura o TC para operar em  4Mhz e interrupçcão no RC compare */
 	tc_find_mck_divisor(freq, ul_sysclk, &ul_div, &ul_tcclks, ul_sysclk);
 	
+	//PMC->PMC_SCER = 1 << 14;
+	ul_tcclks = 1;
+	
 	tc_init(TC, TC_CHANNEL, ul_tcclks 
 							| TC_CMR_WAVE /* Waveform mode is enabled */
 							| TC_CMR_ACPA_SET /* RA Compare Effect: set */
@@ -215,14 +207,15 @@ void TC_init(Tc * TC, int ID_TC, int TC_CHANNEL, int freq){
 							| TC_CMR_CPCTRG /* UP mode with automatic trigger on RC Compare */
 	);
 	
-	tc_write_ra(TC, TC_CHANNEL, 2*65532/3);
-	tc_write_rc(TC, TC_CHANNEL, 3*65532/3);
+	tc_write_rc(TC, TC_CHANNEL, (ul_sysclk / ul_div) / freq /8 );
+	tc_write_ra(TC, TC_CHANNEL, (ul_sysclk / ul_div) / freq / 8 / 2);
+	//tc_write_rc(TC, TC_CHANNEL, 3*65532/3);
 
 	//tc_write_rc(TC, TC_CHANNEL, (ul_sysclk / ul_div) / freq);
 
 	/* Configura e ativa interrupçcão no TC canal 0 */
 	/* Interrupção no C */
-	NVIC_EnableIRQ((IRQn_Type) ID_TC);
+	//NVIC_EnableIRQ((IRQn_Type) ID_TC);
 //	tc_enable_interrupt(TC, TC_CHANNEL, TC_IER_CPCS);
 
 	/* Inicializa o canal 0 do TC */
@@ -258,41 +251,11 @@ int main(void)
 	/* Output example information. */
 	puts(STRING_HEADER);
 	
-	TC_init(TC0, ID_TC0, 0, 5);
-	
-	pmc_enable_periph_clk(ID_PIOA);
-	pio_set_output(PIOA, 1, 0, 0, 0);
-	pio_set_peripheral(PIOA, PIO_PERIPH_B, 1);
-	
-	/* incializa conversão ADC */
-	afec_start_software_conversion(AFEC0);
-	
-	for (int i = 0; i < 16; i++){
-		bufferA[i] = 0;
-	}
-	for (int i = 0; i < 16; i++){
-		bufferB[i] = 0;
-	}
-	
+	TC_init(TC0, ID_TC0, 0, 100000);
+
+	config_DAC();
+
 	while (1) {
-		if(is_conversion_done == true) {
-			is_conversion_done = false;
-			make_buffer(g_ul_value);
-			if (!not_full){
-				for(uint32_t i = 0; i < 16; i++){
-					printf("BufferA : %d \r\n", bufferA[i]);
-				}
-			}
-			
-			if(full_B){
-				for(uint32_t i = 0; i < 16; i++){
-					printf("BufferB : %d \r\n", bufferB[i]);
-				}
-			}
-			//printf("Temp : %d \r\n", convert_adc_to_temp(g_ul_value));
-			
-			//afec_start_software_conversion(AFEC0);
-			delay_s(1);
-		}
+		
 	}
 }
