@@ -431,7 +431,7 @@ void Encoder_init(void){
 static void Encoder_Handler(uint32_t id, uint32_t mask){
 	
 	char buffer[42];
-	sprintf(buffer, "flag before encoder %d \n", flag_encoder);
+	sprintf(buffer, "encoderPosCount %d \n", encoderPosCount);
 	usart_put_string(USART1, buffer);
 			
 	volatile uint8_t aVal = pio_get(EN_CLK, PIO_INPUT,  EN_CLK_PIN_MASK);// digitalRead(pinA)?
@@ -487,23 +487,23 @@ int main (void)
 	/* Disable the watchdog */
 	WDT->WDT_MR = WDT_MR_WDDIS;
 
-	//delay_init(sysclk_get_cpu_hz());
-	//SysTick_Config(sysclk_get_cpu_hz() / 1000); // 1 ms
-	//config_console();
-		
-	//usart_put_string(USART1, "Inicializando...\r\n");
-	//usart_put_string(USART1, "Config HC05 Client...\r\n");
-	//hm10_config_client(); 
-	//hm10_client_init();
-	//char buffer[1024];
-	//pinALast = pio_get(EN_CLK, PIO_INPUT,  EN_CLK_PIN_MASK);
-	//Encoder_init();
-	//BUT_init();
+	delay_init(sysclk_get_cpu_hz());
+	SysTick_Config(sysclk_get_cpu_hz() / 1000); // 1 ms
+	config_console();
+	
+	usart_put_string(USART1, "Inicializando...\r\n");
+	usart_put_string(USART1, "Config HC05 Client...\r\n");
+	hm10_config_client(); 
+	hm10_client_init();
+	char buffer[1024];
+	pinALast = pio_get(EN_CLK, PIO_INPUT,  EN_CLK_PIN_MASK);
+	Encoder_init();
+	BUT_init();
 
 	
 	g_systimer = 0;
-	//encoderPosCount = 0;
-	//flag_encoder = 0;
+	encoderPosCount = 0;
+	flag_encoder = 1;
 	//flag_but = 1;
 	//
 	pmc_enable_periph_clk(ID_PIOA);
@@ -524,7 +524,7 @@ int main (void)
 
 	//dacc_write_conversion_data(DACC_BASE, 1024,DACC_CHANNEL);
 	
-	config_ADC_TEMP();		
+	//config_ADC_TEMP();		
 	/* Output example information. */
 	//puts(STRING_HEADER);
 		
@@ -572,30 +572,23 @@ int main (void)
 		//		delay_ms(1);
 		//	}
 		//	
-		//	//Bluetooth
-		//	/*		
-		//	sprintf(buffer, "flag %d \n", flag_encoder);
-		//	usart_put_string(USART1, buffer);
-		//	delay_ms(500);
-		//
-		//	if(flag_encoder == 1){
-		//		usart_put_string(USART1, "entrou...\r\n");
-		//
-		//		sprintf(buffer, "%d \n", encoderPosCount);
-		//		usart_log("encoder", buffer);
-		//		int temp = encoderPosCount;
-		//		char temp_str[5];
-		//		itoa(temp, temp_str, 10);
-		//		usart_put_string(UART3, temp_str);
-		//		flag_encoder = 0;
-		//	}
-		//	*/
-		//
-		//}
-		//
-		////sprintf(buffer, "%d \n", encoderPosCount);
-		////usart_log("encoder", buffer);
+			//Bluetooth
+					
+			delay_ms(500);
+		
+
+			usart_put_string(USART1, "mandando...\r\n");
+		
+			sprintf(buffer, "%d \n", encoderPosCount);
+			usart_log("encoder", buffer);
+			usart_put_string(UART3, buffer);
+			flag_encoder = 0;
+
+			
+		
+		}
+		
+		//sprintf(buffer, "%d \n", encoderPosCount);
+		//usart_log("encoder", buffer);
 		
 	}
-	
-}

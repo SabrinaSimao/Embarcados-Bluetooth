@@ -11,9 +11,10 @@
 #include <string.h>
 
 volatile long g_systimer = 0;
-volatile uint8_t flag_online = 0;
-volatile uint8_t not_connected = 1;
-void USART0_Handler();
+//volatile uint8_t flag_online = 0;
+//volatile uint8_t not_connected = 1;
+volatile uint8_t volume;
+//void USART0_Handler();
 
 
 void SysTick_Handler() {
@@ -31,7 +32,7 @@ int usart_get_string(Usart *usart, char buffer[], int bufferlen, int timeout_ms)
 	
 	while(g_systimer - timestart < timeout_ms && counter < bufferlen - 1) {
 		if(usart_read(usart, &rx) == 0) {
-			//timestart = g_systimer; // reset timeout
+			timestart = g_systimer; // reset timeout
 			buffer[counter++] = rx;
 		}
 	}
@@ -74,7 +75,7 @@ void hm10_config_server(void) {
 	usart_enable_rx(USART0);
 	
 	sysclk_enable_peripheral_clock(ID_PIOB);
-	usart_init_rs232(USART0, &config, sysclk_get_peripheral_hz());
+	//usart_init_rs232(USART0, &config, sysclk_get_peripheral_hz());
 
 
 	// RX - PB0  TX - PB1
@@ -83,16 +84,16 @@ void hm10_config_server(void) {
 	
 	
 	/* Ativa Clock e IRQ periferico USART0 */
-	sysclk_enable_peripheral_clock(ID_USART0);
+	//sysclk_enable_peripheral_clock(ID_USART0);
 	
-	usart_enable_interrupt(USART0, US_IER_RXRDY);
-	NVIC_SetPriority(ID_USART0, 1);
-	NVIC_EnableIRQ(ID_USART0);
+	//usart_enable_interrupt(USART0, US_IER_RXRDY);
+	//NVIC_SetPriority(ID_USART0, 1);
+	//NVIC_EnableIRQ(ID_USART0);
 
 
 }
 
-void USART0_Handler(){
+/*void USART0_Handler(){
 	
 	char buffer[54];
 	
@@ -108,7 +109,7 @@ void USART0_Handler(){
 			usart_put_string(USART0, "NA\n");	
 		}
 	}
-}
+}*/
 
 /*
 void hm10_config_client(void) {
@@ -172,21 +173,20 @@ int main (void)
 	usart_put_string(USART1, "Config HC05 Server...\r\n");
 	hm10_config_server();
 	hm10_server_init();
-	usart_put_string(USART1, "Config HC05 Client...\r\n");
 	
 	char buffer[1024];
 	
-	flag_online = 0;
-	not_connected = 1;
 	
 	while(1) {
 		//usart_put_string(USART0, "Tchau\n");
 		//usart_get_string(USART0, buffer, 1024, 1000);
 
-		if (flag_online){
-			usart_get_string(USART0, buffer, 1024, 1000);
-			usart_log("Volume", buffer);
-		}
+
+		usart_get_string(USART0, buffer, 1024, 100);
+		usart_log("Volume", buffer);
+		sprintf(volume, "%d \n", buffer);
+		delay_ms(1);
+
 	}
 	
 	
