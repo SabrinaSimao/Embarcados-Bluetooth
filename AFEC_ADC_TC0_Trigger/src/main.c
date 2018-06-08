@@ -66,32 +66,40 @@ void TC0_Handler(void){
  * \brief AFEC interrupt callback function.
  */
 
-PPBUF_DECLARE(buffer,120000);
+PPBUF_DECLARE(buffer,12000);
 volatile uint32_t buf = 0;
+volatile uint8_t passa_baixa_ativo = 0;
+uint32_t corte_filtro = 2800;
 
 static void AFEC_Temp_callback(void){	
 	/** The conversion data value */
 	uint32_t g_ul_value = 0;
 
 	g_ul_value = afec_channel_get_value(AFEC0, canal_generico_pino);
-	
+	if(passa_baixa_ativo){
+		if (g_ul_value>corte_filtro){
+			g_ul_value = corte_filtro;
+		}
+	}
 
 	// check swap
-	if(ppbuf_get_full_signal(&buffer,false) == true) {
-		ppbuf_get_full_signal(&buffer,true); // swap
-	}
+	//if(ppbuf_get_full_signal(&buffer,false) == true) {
+	//	ppbuf_get_full_signal(&buffer,true); // swap
+	//}
 	
-	ppbuf_insert_active(&buffer, &g_ul_value, sizeof(g_ul_value));
+	//ppbuf_insert_active(&buffer, &g_ul_value, sizeof(g_ul_value));
 		
 	/* gets the data on the pong buffer */
-	ppbuf_remove_inactive(&buffer, &buf, sizeof(buf));	
+	//ppbuf_remove_inactive(&buffer, &buf, sizeof(buf));	
+	dacc_write_conversion_data(DACC_BASE, g_ul_value, DACC_CHANNEL);
 	
     dacc_get_interrupt_status(DACC_BASE);
+	/*
 	if ((buffer.ping == 0)){
-		dacc_write_conversion_data(DACC_BASE, buf/2, DACC_CHANNEL);
+		dacc_write_conversion_data(DACC_BASE, buf/4, DACC_CHANNEL);
 	}else{
 		dacc_write_conversion_data(DACC_BASE, buf, DACC_CHANNEL);
-	}
+	}*/
 }
 
 /************************************************************************/
