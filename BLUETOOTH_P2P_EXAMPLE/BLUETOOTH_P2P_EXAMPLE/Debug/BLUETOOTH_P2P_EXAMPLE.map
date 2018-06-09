@@ -8457,7 +8457,7 @@ OUTPUT(BLUETOOTH_P2P_EXAMPLE.elf elf32-littlearm)
  .debug_macro   0x000088ea       0x16 src/main.o
  .debug_macro   0x00008900       0x1c src/main.o
 
-.debug_line     0x00000000     0xd158
+.debug_line     0x00000000     0xd156
  .debug_line    0x00000000     0x10b2 src/ASF/sam/drivers/afec/afec.o
  .debug_line    0x000010b2      0xb29 src/ASF/sam/drivers/dacc/dacc.o
  .debug_line    0x00001bdb      0xb8c src/ASF/sam/drivers/tc/tc.o
@@ -8474,7 +8474,7 @@ OUTPUT(BLUETOOTH_P2P_EXAMPLE.elf elf32-littlearm)
  .debug_line    0x0000a7bd      0xac0 src/ASF/sam/utils/cmsis/same70/source/templates/gcc/startup_same70.o
  .debug_line    0x0000b27d      0x820 src/ASF/sam/utils/cmsis/same70/source/templates/system_same70.o
  .debug_line    0x0000ba9d      0x417 src/ASF/sam/utils/syscalls/gcc/syscalls.o
- .debug_line    0x0000beb4     0x12a4 src/main.o
+ .debug_line    0x0000beb4     0x12a2 src/main.o
 
 .debug_str      0x00000000    0x8ce3f
  .debug_str     0x00000000    0x86dee src/ASF/sam/drivers/afec/afec.o

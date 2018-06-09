@@ -31,9 +31,9 @@ Idx Name          Size      VMA       LMA       File off  Algn
                   CONTENTS, READONLY, DEBUGGING
  13 .debug_macro  0000891c  00000000  00000000  00045644  2**0
                   CONTENTS, READONLY, DEBUGGING
- 14 .debug_line   0000d158  00000000  00000000  0004df60  2**0
+ 14 .debug_line   0000d156  00000000  00000000  0004df60  2**0
                   CONTENTS, READONLY, DEBUGGING
- 15 .debug_str    0008ce3f  00000000  00000000  0005b0b8  2**0
+ 15 .debug_str    0008ce3f  00000000  00000000  0005b0b6  2**0
                   CONTENTS, READONLY, DEBUGGING
  16 .debug_frame  00004908  00000000  00000000  000e7ef8  2**2
                   CONTENTS, READONLY, DEBUGGING
@@ -5969,11 +5969,7 @@ void SysTick_Handler() {
   402224:	3301      	adds	r3, #1
   402226:	4a03      	ldr	r2, [pc, #12]	; (402234 <SysTick_Handler+0x18>)
   402228:	6013      	str	r3, [r2, #0]
-		*/
-
-		//dacc_write_conversion_data(DACC_BASE, dac_val, DACC_CHANNEL);
 		
-	
 }
   40222a:	bf00      	nop
   40222c:	46bd      	mov	sp, r7
@@ -6827,10 +6823,10 @@ int main (void)
   4027f8:	484d      	ldr	r0, [pc, #308]	; (402930 <main+0x1f0>)
   4027fa:	4c4e      	ldr	r4, [pc, #312]	; (402934 <main+0x1f4>)
   4027fc:	47a0      	blx	r4
-		//		delay_ms(1);
-		//	}
-		//	
-			//Bluetooth
+
+	// final ADC
+
+	while(1) {
 					
 			delay_ms(500);
   4027fe:	4b31      	ldr	r3, [pc, #196]	; (4028c4 <main+0x184>)
@@ -6879,7 +6875,6 @@ int main (void)
   402874:	4618      	mov	r0, r3
   402876:	4b31      	ldr	r3, [pc, #196]	; (40293c <main+0x1fc>)
   402878:	4798      	blx	r3
-		
 
 			usart_put_string(USART1, "mandando...\r\n");
   40287a:	4931      	ldr	r1, [pc, #196]	; (402940 <main+0x200>)

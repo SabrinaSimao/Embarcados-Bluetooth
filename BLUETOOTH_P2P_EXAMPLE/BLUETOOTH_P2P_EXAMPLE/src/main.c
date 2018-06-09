@@ -304,30 +304,7 @@ const int16_t gc_us_sine_data[SAMPLES] = {
 
 void SysTick_Handler() {
 	g_systimer++;
-	
-	//Coisas do dacc
-	//uint32_t status;
-	
-	
-	//status = dacc_get_interrupt_status(DACC_BASE);
-
-	//If ready for new data
-	/*
-	if ((status & DACC_ISR_TXRDY0) == DACC_ISR_TXRDY0) {
-		g_ul_index_sample++;
-		if (g_ul_index_sample >= SAMPLES) {
-			g_ul_index_sample = 0;
-		}
-		dac_val = g_uc_wave_sel ?
-				((g_ul_index_sample > SAMPLES / 2) ? 0 : MAX_AMPLITUDE)
-				: wave_to_dacc(gc_us_sine_data[g_ul_index_sample],
-					 g_l_amplitude,
-					 MAX_DIGITAL * 2, MAX_AMPLITUDE);
-		*/
-
-		//dacc_write_conversion_data(DACC_BASE, dac_val, DACC_CHANNEL);
 		
-	
 }
 
 void usart_put_string(Usart *usart, char str[]) {
@@ -538,43 +515,8 @@ int main (void)
 	// final ADC
 
 	while(1) {
-		
-		//if (flag_but){
-		//	//usart_put_string(UART3, "OI\n");
-		//	//usart_get_string(UART3, buffer, 1024, 1000);
-		//	//usart_log("main", buffer);
-		//	
-		//	// AFEC
-		//	if(is_conversion_done == true) {
-		//		is_conversion_done = false;
-		//		make_buffer(g_ul_value);
-		//		if (!not_full){
-		//			for(uint32_t i = 0; i < 16; i++){
-		//				//dacc_write_conversion_data(DACC_BASE, bufferA[i], DACC_CHANNEL);//temporario
-		//				printf("BufferA : %d \r\n", bufferA[i]);
-		//				sprintf(buffer, "flag before %d \n", bufferA[i]);
-		//				usart_put_string(USART1, buffer);
-		//			}
-		//		}
-		//				
-		//		if(full_B){
-		//			for(uint32_t i = 0; i < 16; i++){
-		//				//dacc_write_conversion_data(DACC_BASE, bufferB[i], DACC_CHANNEL);//temporario
-		//				printf("BufferB : %d \r\n", bufferB[i]);
-		//				sprintf(buffer, "flag before %d \n", bufferB[i]);
-		//				usart_put_string(USART1, buffer);
-		//			}
-		//		}
-		//		//printf("Temp : %d \r\n", convert_adc_to_temp(g_ul_value));
-		//				
-		//		//afec_start_software_conversion(AFEC0);
-		//		delay_ms(1);
-		//	}
-		//	
-			//Bluetooth
 					
 			delay_ms(500);
-		
 
 			usart_put_string(USART1, "mandando...\r\n");
 		
