@@ -44,18 +44,24 @@
 #define BUT_DEBOUNCING_VALUE  79
 
 #define TEST(f) {.test_function=f, .test_name=#f}
-#define test_list test_data t[]
-test_list = {TEST(func1), TEST(func2), TEST(func3), TEST(func4)};
+
+
+/************************************************************************/
+/*        definir funcs                                                 */
+/************************************************************************/
+void TC_init(Tc * TC, int ID_TC, int TC_CHANNEL, int freq);
+static void Softning();
+static void Hard_clipping();
+static void Volume();
 
 typedef struct {
-	void (*test_function)();
+	static void (*test_function)();
 	char test_name[100];
 } test_data;
 
-/************************************************************************/
-/*                                                                      */
-/************************************************************************/
-void TC_init(Tc * TC, int ID_TC, int TC_CHANNEL, int freq);
+test_data t[] = {TEST(Softning), TEST(Hard_clipping), TEST(Volume)};
+
+
 
 /************************************************************************/
 /* Callbacks / Handler                                                 */
@@ -82,7 +88,7 @@ void TC0_Handler(void){
 
 PPBUF_DECLARE(buffer,12000);
 volatile uint32_t buf = 0;
-volatile uint8_t passa_baixa_ativo = 1;
+
 uint32_t corte_filtro = 4000;
 float volume = 0.5;
 uint32_t g_ul_value_old = 0;
@@ -90,16 +96,16 @@ uint32_t temp;
 uint32_t g_ul_value = 0;
 uint32_t corte_alto = 3000;
 uint32_t corte_baixo = 300;
+uint8_t funcao_escolhida = 0;
 
-
-uint32_t Softning(){
+static void Softning(){
 	temp = g_ul_value;
 	g_ul_value = (int) ((float) g_ul_value * (float) g_ul_value_old* 0.01) + g_ul_value ;
 	g_ul_value_old = temp;
-	return g_ul_value;
+
 }
 
-uint32_t Hard_clipping(){
+static void Hard_clipping(){
 	g_ul_value = g_ul_value *4;
 	
 	if (g_ul_value > corte_alto){
@@ -109,12 +115,12 @@ uint32_t Hard_clipping(){
 		g_ul_value = corte_baixo;
 	}
 	g_ul_value = g_ul_value / 4;
-	return g_ul_value;
+
 }
 
-uint32_t volume(){
+static void Volume(){
 	g_ul_value  = (int) ((float) g_ul_value * volume);
-	return g_ul_value;
+
 }
 
 static void AFEC_Temp_callback(void){
@@ -122,6 +128,7 @@ static void AFEC_Temp_callback(void){
 	
 	g_ul_value = afec_channel_get_value(AFEC0, canal_generico_pino);
 	
+	t[funcao_escolhida].test_function();
 	
 	 /*VOLUME
 	if( !pio_get(BUT_PIO, PIO_INPUT, BUT_PIN_MASK)){
