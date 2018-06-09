@@ -28,7 +28,7 @@
 "-- Compiled: "__DATE__" "__TIME__" --"STRING_EOL
 
 
-#define canal_generico_pino 1//canal 0 = PD30
+#define canal_generico_pino 0//canal 0 = PD30
 
 //! DAC channel used for test
 #define DACC_CHANNEL        0 // (PB13)
@@ -36,6 +36,21 @@
 #define DACC_BASE           DACC
 //! DAC ID for test
 #define DACC_ID             ID_DACC
+
+#define BUT_PIO_ID			  ID_PIOA
+#define BUT_PIO				  PIOA
+#define BUT_PIN				  11
+#define BUT_PIN_MASK		  (1 << BUT_PIN)
+#define BUT_DEBOUNCING_VALUE  79
+
+#define TEST(f) {.test_function=f, .test_name=#f}
+#define test_list test_data t[]
+test_list = {TEST(func1), TEST(func2), TEST(func3), TEST(func4)};
+
+typedef struct {
+	void (*test_function)();
+	char test_name[100];
+} test_data;
 
 /************************************************************************/
 /*                                                                      */
@@ -55,7 +70,6 @@ void TC0_Handler(void){
 	* Devemos indicar ao TC que a interrupção foi satisfeita.
 	******************************************************************/
 	ul_dummy = tc_get_status(TC0, 0);
-	printf("kakaka \n");
 
 	/* Avoid compiler warning */
 	UNUSED(ul_dummy);
@@ -68,39 +82,74 @@ void TC0_Handler(void){
 
 PPBUF_DECLARE(buffer,12000);
 volatile uint32_t buf = 0;
-volatile uint8_t passa_baixa_ativo = 0;
-uint32_t corte_filtro = 2800;
+volatile uint8_t passa_baixa_ativo = 1;
+uint32_t corte_filtro = 4000;
+float volume = 0.5;
+uint32_t g_ul_value_old = 0;
+uint32_t temp;
+uint32_t g_ul_value = 0;
+uint32_t corte_alto = 3000;
+uint32_t corte_baixo = 300;
 
-static void AFEC_Temp_callback(void){	
-	/** The conversion data value */
-	uint32_t g_ul_value = 0;
 
-	g_ul_value = afec_channel_get_value(AFEC0, canal_generico_pino);
-	if(passa_baixa_ativo){
-		if (g_ul_value>corte_filtro){
-			g_ul_value = corte_filtro;
-		}
+uint32_t Softning(){
+	temp = g_ul_value;
+	g_ul_value = (int) ((float) g_ul_value * (float) g_ul_value_old* 0.01) + g_ul_value ;
+	g_ul_value_old = temp;
+	return g_ul_value;
+}
+
+uint32_t Hard_clipping(){
+	g_ul_value = g_ul_value *4;
+	
+	if (g_ul_value > corte_alto){
+		g_ul_value = corte_alto;
 	}
+	if (g_ul_value < corte_baixo){
+		g_ul_value = corte_baixo;
+	}
+	g_ul_value = g_ul_value / 4;
+	return g_ul_value;
+}
+
+uint32_t volume(){
+	g_ul_value  = (int) ((float) g_ul_value * volume);
+	return g_ul_value;
+}
+
+static void AFEC_Temp_callback(void){
+	/** The conversion data value */
+	
+	g_ul_value = afec_channel_get_value(AFEC0, canal_generico_pino);
+	
+	
+	 /*VOLUME
+	if( !pio_get(BUT_PIO, PIO_INPUT, BUT_PIN_MASK)){
+	}*/
+	
 
 	// check swap
-	//if(ppbuf_get_full_signal(&buffer,false) == true) {
-	//	ppbuf_get_full_signal(&buffer,true); // swap
-	//}
+	if(ppbuf_get_full_signal(&buffer,false) == true) {
+		ppbuf_get_full_signal(&buffer,true); // swap
+	}
 	
-	//ppbuf_insert_active(&buffer, &g_ul_value, sizeof(g_ul_value));
-		
+	ppbuf_insert_active(&buffer, &g_ul_value, sizeof(g_ul_value));
+	
 	/* gets the data on the pong buffer */
-	//ppbuf_remove_inactive(&buffer, &buf, sizeof(buf));	
-	dacc_write_conversion_data(DACC_BASE, g_ul_value, DACC_CHANNEL);
+	ppbuf_remove_inactive(&buffer, &buf, sizeof(buf));
 	
-    dacc_get_interrupt_status(DACC_BASE);
-	/*
+	dacc_get_interrupt_status(DACC_BASE);
+		//	dacc_write_conversion_data(DACC_BASE, buf, DACC_CHANNEL);
+
+	
 	if ((buffer.ping == 0)){
-		dacc_write_conversion_data(DACC_BASE, buf/4, DACC_CHANNEL);
-	}else{
 		dacc_write_conversion_data(DACC_BASE, buf, DACC_CHANNEL);
-	}*/
+	}
+	else{
+		dacc_write_conversion_data(DACC_BASE, buf, DACC_CHANNEL);
+	}
 }
+
 
 /************************************************************************/
 /* Funcoes                                                              */
@@ -150,7 +199,7 @@ static void config_ADC_TEMP(void){
 	AFEC0->AFEC_MR |= 3;
   
 	/* configura call back */
-	afec_set_callback(AFEC0, AFEC_INTERRUPT_EOC_1,	AFEC_Temp_callback, 1); 
+	afec_set_callback(AFEC0, AFEC_INTERRUPT_EOC_0,	AFEC_Temp_callback, 1); 
    
 	/*** Configuracao específica do canal AFEC ***/
 	struct afec_ch_config afec_ch_cfg;
@@ -230,6 +279,21 @@ void TC_init(Tc * TC, int ID_TC, int TC_CHANNEL, int freq){
 	tc_start(TC, TC_CHANNEL);
 }
 
+void BUT_init(void){
+	/* config. pino botao em modo de entrada */
+	pmc_enable_periph_clk(BUT_PIO_ID);
+	pio_set_input(BUT_PIO, BUT_PIN_MASK, PIO_PULLUP | PIO_DEBOUNCE);
+
+	/* config. interrupcao em borda de descida no botao do kit */
+	/* indica funcao (but_Handler) a ser chamada quando houver uma interrup??o */
+	//pio_enable_interrupt(BUT_PIO, BUT_PIN_MASK);
+	//pio_handler_set(BUT_PIO, BUT_PIO_ID, BUT_PIN_MASK, PIO_IT_FALL_EDGE, Button0_Handler);
+
+	/* habilita interrup?c?o do PIO que controla o botao */
+	/* e configura sua prioridade                        */
+	//NVIC_EnableIRQ(BUT_PIO_ID);
+	//NVIC_SetPriority(BUT_PIO_ID, 1);
+};
 
 /************************************************************************/
 /* Main                                                                 */
@@ -258,6 +322,8 @@ int main(void)
   
 	/* Output example information. */
 	puts(STRING_HEADER);
+	
+	BUT_init();
 	
 	TC_init(TC0, ID_TC0, 0, 100000);
 
