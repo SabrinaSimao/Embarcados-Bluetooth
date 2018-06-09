@@ -16,10 +16,17 @@
 /************************************************************************/
 
 volatile uint32_t g_systimer = 0;
-volatile int32_t encoderPosCount = 0;
+volatile int32_t encoderPosCount = 50;
 volatile uint32_t pinALast;
 volatile uint32_t flag_encoder = 0;
 volatile uint32_t flag_but = 0;
+volatile uint8_t but_number = 0;
+
+#define BUT_PIO_ID			  ID_PIOA
+#define BUT_PIO				  PIOA
+#define BUT_PIN				  11
+#define BUT_PIN_MASK			  (1 << BUT_PIN)
+#define BUT_DEBOUNCING_VALUE  79
 
 
 
@@ -39,6 +46,9 @@ volatile uint32_t flag_but = 0;
 #define BUT_PIN				  11
 #define BUT_PIN_MASK			  (1 << BUT_PIN)
 #define BUT_DEBOUNCING_VALUE  79
+
+
+
 
 #define buffer_siz 1024
 
@@ -116,6 +126,8 @@ static void Button_Handler();
 #define VAL_INVALID     0xFFFFFFFF
 
 //PPBUF_DECLARE(buffer,buffer_siz);
+
+
 /************************************************************************/
 /* funcoes    ADC                                                       */
 /*************************************************************************/
@@ -165,101 +177,6 @@ static void AFEC_Temp_callback(void){
 
 
 
-static void config_ADC_TEMP(void){
-/************************************* 
-   * Ativa e configura AFEC
-   *************************************/  
-  /* Ativa AFEC - 0 */
-	afec_enable(AFEC0);
-
-	/* struct de configuracao do AFEC */
-	struct afec_config afec_cfg;
-
-	/* Carrega parametros padrao */
-	afec_get_config_defaults(&afec_cfg);
-
-	/* Configura AFEC */
-	afec_init(AFEC0, &afec_cfg);
-  
-	/* Configura trigger por software */
-	afec_set_trigger(AFEC0, AFEC_TRIG_TIO_CH_0);
-		
-	AFEC0->AFEC_MR |= 3;
-  
-	/* configura call back */
-	afec_set_callback(AFEC0, AFEC_INTERRUPT_EOC_0,	AFEC_Temp_callback, 1); 
-   
-	/*** Configuracao específica do canal AFEC ***/
-	struct afec_ch_config afec_ch_cfg;
-	afec_ch_get_config_defaults(&afec_ch_cfg);
-	afec_ch_cfg.gain = AFEC_GAINVALUE_0;
-	afec_ch_set_config(AFEC0, canal_generico_pino, &afec_ch_cfg);
-  
-	/*
-	* Calibracao:
-	* Because the internal ADC offset is 0x200, it should cancel it and shift
-	 down to 0.
-	 */
-	afec_channel_set_analog_offset(AFEC0, canal_generico_pino, 0);
-
-	/***  Configura sensor de temperatura ***/
-	struct afec_temp_sensor_config afec_temp_sensor_cfg;
-
-	afec_temp_sensor_get_config_defaults(&afec_temp_sensor_cfg);
-	afec_temp_sensor_set_config(AFEC0, &afec_temp_sensor_cfg);
-	//pio_pull_down(PIOA, (1u) << 21, 1);
-
-	/* Selecina canal e inicializa conversão */  
-	afec_channel_enable(AFEC0, canal_generico_pino);
-}
-
-/**
-* Configura TimerCounter (TC) para gerar uma interrupcao no canal (ID_TC e TC_CHANNEL)
-* na taxa de especificada em freq.
-*/
-void TC_init(Tc * TC, int ID_TC, int TC_CHANNEL, int freq){
-	uint32_t ul_div;
-	uint32_t ul_tcclks;
-	uint32_t ul_sysclk = sysclk_get_cpu_hz();
-
-	uint32_t channel = 1;
-
-	/* Configura o PMC */
-	/* O TimerCounter é meio confuso
-	o uC possui 3 TCs, cada TC possui 3 canais
-	TC0 : ID_TC0, ID_TC1, ID_TC2
-	TC1 : ID_TC3, ID_TC4, ID_TC5
-	TC2 : ID_TC6, ID_TC7, ID_TC8
-	*/
-	pmc_enable_periph_clk(ID_TC);
-
-	/** Configura o TC para operar em  4Mhz e interrupçcão no RC compare */
-	tc_find_mck_divisor(freq, ul_sysclk, &ul_div, &ul_tcclks, ul_sysclk);
-	
-	//PMC->PMC_SCER = 1 << 14;
-	ul_tcclks = 1;
-	
-	tc_init(TC, TC_CHANNEL, ul_tcclks 
-							| TC_CMR_WAVE /* Waveform mode is enabled */
-							| TC_CMR_ACPA_SET /* RA Compare Effect: set */
-							| TC_CMR_ACPC_CLEAR /* RC Compare Effect: clear */
-							| TC_CMR_CPCTRG /* UP mode with automatic trigger on RC Compare */
-	);
-	
-	tc_write_rc(TC, TC_CHANNEL, (ul_sysclk / ul_div) / freq /8 );
-	tc_write_ra(TC, TC_CHANNEL, (ul_sysclk / ul_div) / freq / 8 / 2);
-	//tc_write_rc(TC, TC_CHANNEL, 3*65532/3);
-
-	//tc_write_rc(TC, TC_CHANNEL, (ul_sysclk / ul_div) / freq);
-
-	/* Configura e ativa interrupçcão no TC canal 0 */
-	/* Interrupção no C */
-	//NVIC_EnableIRQ((IRQn_Type) ID_TC);
-//	tc_enable_interrupt(TC, TC_CHANNEL, TC_IER_CPCS);
-
-	/* Inicializa o canal 0 do TC */
-	tc_start(TC, TC_CHANNEL);
-}
 
 /************************************************************************/
 /* funcoes                                                              */
@@ -444,13 +361,31 @@ void BUT_init(void){
 	NVIC_SetPriority(BUT_PIO_ID, 1);
 	}
 	
-static void Button_Handler(uint32_t id, uint32_t mask){
+/*static void Button_Handler(uint32_t id, uint32_t mask){
 		usart_put_string(UART3, "!");
 		flag_but = 1;
 		
 		char buffer[54];
 		sprintf(buffer, "flag butt %d \n", flag_but);
 		usart_put_string(USART1, buffer);
+}
+*/
+static void Button_Handler(uint32_t id, uint32_t mask)
+{
+	 but_number++;
+	 char but_temp[32];
+	 
+	 
+	 if (but_number > 2){
+		 but_number = 0;
+	 }
+
+
+	sprintf(but_temp, "i %d \n", but_number); // I = instruction
+	usart_log("mandando instrucao de botao", but_temp);
+	usart_put_string(UART3, but_temp);
+
+	 
 }
 
 
@@ -478,7 +413,7 @@ int main (void)
 
 	
 	g_systimer = 0;
-	encoderPosCount = 0;
+	encoderPosCount = 50;
 	flag_encoder = 1;
 	//flag_but = 1;
 	//
@@ -503,13 +438,12 @@ int main (void)
 	//config_ADC_TEMP();		
 	/* Output example information. */
 	//puts(STRING_HEADER);
-		
-	TC_init(TC0, ID_TC0, 0, 100000);
+
 		
 		
 	/* incializa conversão ADC */
 	//afec_start_software_conversion(AFEC0);
-		
+	BUT_init();
 		
 
 	// final ADC
@@ -520,7 +454,7 @@ int main (void)
 
 			usart_put_string(USART1, "mandando...\r\n");
 		
-			sprintf(buffer, "blabla bla 0 ", encoderPosCount);
+			sprintf(buffer, "v %d \n", encoderPosCount);
 			usart_log("encoder", buffer);
 			usart_put_string(UART3, buffer);
 			flag_encoder = 0;

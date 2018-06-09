@@ -315,7 +315,7 @@ int main (void)
 	config_ADC_TEMP();
 		
 		
-	//TC_init(TC0, ID_TC0, 0, 100000);
+	TC_init(TC0, ID_TC0, 0, 100000);
 	
 	char temp_volume[1024];
 	char *str;
