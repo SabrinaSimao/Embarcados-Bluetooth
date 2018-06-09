@@ -9,19 +9,20 @@
 
 #include <asf.h>
 #include <string.h>
-#include "PingPong.h"
+#include <math.h>
 #include <errno.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <assert.h>
+#include "PingPong.h"
 
 volatile long g_systimer = 0;
 //volatile uint8_t flag_online = 0;
 //volatile uint8_t not_connected = 1;
-long volume;
 //void USART0_Handler();
 
 //coisas SA
-#define canal_generico_pino 1//canal 0 = PD30
+#define canal_generico_pino 1//canal 0 = PD30 canal 1 = PA21
 //! DAC channel used for test
 #define DACC_CHANNEL        0 // (PB13)
 //! DAC register base for test
@@ -29,6 +30,61 @@ long volume;
 //! DAC ID for test
 #define DACC_ID             ID_DACC
 
+#define TEST(f) {.test_function=f, .test_name=#f}
+
+/************************************************************************/
+/*        inicializando funcoes                                         */
+/************************************************************************/
+void TC_init(Tc * TC, int ID_TC, int TC_CHANNEL, int freq);
+void Softning();
+void Hard_clipping();
+void Volume();
+
+typedef struct {
+	void (*test_function)();
+	char test_name[100];
+} test_data;
+
+test_data t[] = {TEST(Softning), TEST(Hard_clipping), TEST(Volume)};
+
+uint32_t corte_filtro = 4000;
+long volume = 50;
+uint32_t g_ul_value_old = 0;
+uint32_t temp;
+uint32_t g_ul_value = 0;
+uint32_t corte_alto = 3000;
+uint32_t corte_baixo = 300;
+uint8_t funcao_escolhida = 0;
+
+
+ void Softning(){
+	float constante = volume/1000;
+	temp = g_ul_value;
+	g_ul_value = (int) ((float) g_ul_value * (float) g_ul_value_old* constante) + g_ul_value ;
+	g_ul_value_old = temp;
+
+}
+
+ void Hard_clipping(){
+	g_ul_value = g_ul_value *4;
+	float corte = log2(volume);
+	uint32_t corte_alto = (int)(corte * 500);
+	uint32_t corte_baixo = (int)(corte * 200);
+	if (g_ul_value > corte_alto){
+		g_ul_value = corte_alto;
+	}
+	if (g_ul_value < corte_baixo){
+		g_ul_value = corte_baixo;
+	}
+	g_ul_value = g_ul_value / 4;
+
+}
+
+ void Volume(){
+	float volume_temp = volume/100;
+	g_ul_value  = (int) ((float) g_ul_value * volume_temp);
+
+}
 
 void SysTick_Handler() {
 	g_systimer++;	
@@ -58,12 +114,12 @@ void TC0_Handler(void){
 PPBUF_DECLARE(buffer,120000);
 volatile uint32_t buf = 0;
 
-static void AFEC_Temp_callback(void){	
+static void AFEC_Temp_callback(void){
 	/** The conversion data value */
-	uint32_t g_ul_value = 0;
-
+	
 	g_ul_value = afec_channel_get_value(AFEC0, canal_generico_pino);
 	
+	t[funcao_escolhida].test_function();
 
 	// check swap
 	if(ppbuf_get_full_signal(&buffer,false) == true) {
@@ -71,14 +127,16 @@ static void AFEC_Temp_callback(void){
 	}
 	
 	ppbuf_insert_active(&buffer, &g_ul_value, sizeof(g_ul_value));
-		
-	/* gets the data on the pong buffer */
-	ppbuf_remove_inactive(&buffer, &buf, sizeof(buf));	
 	
-    dacc_get_interrupt_status(DACC_BASE);
+	/* gets the data on the pong buffer */
+	ppbuf_remove_inactive(&buffer, &buf, sizeof(buf));
+	
+	dacc_get_interrupt_status(DACC_BASE);
+	
 	if ((buffer.ping == 0)){
-		dacc_write_conversion_data(DACC_BASE, buf/2, DACC_CHANNEL);
-	}else{
+		dacc_write_conversion_data(DACC_BASE, buf, DACC_CHANNEL);
+	}
+	else{
 		dacc_write_conversion_data(DACC_BASE, buf, DACC_CHANNEL);
 	}
 }
@@ -172,7 +230,6 @@ void hm10_config_server(void) {
 		}
 	}
 }*/
-
 
 int hm10_server_init(void) {
 	char buffer_rx[128];
@@ -317,17 +374,24 @@ int main (void)
 		
 	TC_init(TC0, ID_TC0, 0, 100000);
 	
-	char temp_volume[1024];
+	char temp_instrucao[1024];
 	char *str;
 	
 	while(1) {
 		
 		
-		usart_get_string(USART0, temp_volume, 1024, 100);
+		usart_get_string(USART0, temp_instrucao, 1024, 100);
 		
-		if(temp_volume[0] == 118){
-			usart_log("before", temp_volume);
-			volume  = strtol(temp_volume, &str, 10);
+		if(temp_instrucao[0] == 105){ // checa se é uma instrução tipo i(intrução_geral)
+			usart_log("antes", temp_instrucao);
+			funcao_escolhida = strtol(temp_instrucao, &str, 10);
+			usart_log("Volume", funcao_escolhida);
+			usart_log("String", str);
+		}
+		
+		if(temp_instrucao[0] == 118){ // checa se é uma instrução tipo v(volume)
+			usart_log("antes", temp_instrucao);
+			volume  = strtol(temp_instrucao, &str, 10);
 			usart_log("Volume", volume);
 			usart_log("String", str);
 		}

@@ -18,7 +18,6 @@
 volatile uint32_t g_systimer = 0;
 volatile int32_t encoderPosCount = 50;
 volatile uint32_t pinALast;
-volatile uint32_t flag_encoder = 0;
 volatile uint32_t flag_but = 0;
 volatile uint8_t but_number = 0;
 
@@ -335,12 +334,15 @@ static void Encoder_Handler(uint32_t id, uint32_t mask){
 		}
 		
 	}
-	else if (encoderPosCount > 0){// Otherwise B changed first and we're moving CCW
+		else if (encoderPosCount > 1){// Otherwise B changed first and we're moving CCW
 		encoderPosCount--;
 		}
-		
-		
-	flag_encoder = 1;
+	
+	usart_put_string(USART1, "mandando...\r\n");
+	sprintf(buffer, "v %d \n", encoderPosCount);
+	usart_log("encoder", buffer);
+	usart_put_string(UART3, buffer);
+
 	pinALast = aVal;
 	
 }
@@ -384,6 +386,7 @@ static void Button_Handler(uint32_t id, uint32_t mask)
 	sprintf(but_temp, "i %d \n", but_number); // I = instruction
 	usart_log("mandando instrucao de botao", but_temp);
 	usart_put_string(UART3, but_temp);
+	encoderPosCount = 50;
 
 	 
 }
@@ -414,7 +417,6 @@ int main (void)
 	
 	g_systimer = 0;
 	encoderPosCount = 50;
-	flag_encoder = 1;
 	//flag_but = 1;
 	//
 	pmc_enable_periph_clk(ID_PIOA);
@@ -447,17 +449,13 @@ int main (void)
 		
 
 	// final ADC
+	
+	
 
 	while(1) {
 					
-			delay_ms(500);
+			//delay_ms(500);
 
-			usart_put_string(USART1, "mandando...\r\n");
-		
-			sprintf(buffer, "v %d \n", encoderPosCount);
-			usart_log("encoder", buffer);
-			usart_put_string(UART3, buffer);
-			flag_encoder = 0;
 
 			
 		
