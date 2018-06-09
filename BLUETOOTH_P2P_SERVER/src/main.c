@@ -12,11 +12,12 @@
 #include "PingPong.h"
 #include <errno.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 volatile long g_systimer = 0;
 //volatile uint8_t flag_online = 0;
 //volatile uint8_t not_connected = 1;
-volatile uint8_t volume;
+long volume;
 //void USART0_Handler();
 
 //coisas SA
@@ -86,7 +87,7 @@ void usart_put_string(Usart *usart, char str[]) {
 	usart_serial_write_packet(usart, str, strlen(str));
 }
 
-int usart_get_string(Usart *usart, char buffer[], int bufferlen, int timeout_ms) {
+int usart_get_string(Usart *usart, char buffer_get[], int bufferlen, int timeout_ms) {
 	long timestart = g_systimer;
 	uint32_t rx;
 	uint32_t counter = 0;
@@ -94,10 +95,10 @@ int usart_get_string(Usart *usart, char buffer[], int bufferlen, int timeout_ms)
 	while(g_systimer - timestart < timeout_ms && counter < bufferlen - 1) {
 		if(usart_read(usart, &rx) == 0) {
 			timestart = g_systimer; // reset timeout
-			buffer[counter++] = rx;
+			buffer_get[counter++] = rx;
 		}
 	}
-	buffer[counter] = 0x00;
+	buffer_get[counter] = 0x00;
 	return counter;
 }
 
@@ -317,24 +318,22 @@ int main (void)
 	//TC_init(TC0, ID_TC0, 0, 100000);
 	
 	char temp_volume[1024];
-	
+	char *str;
 	
 	while(1) {
-		//usart_put_string(USART0, "Tchau\n");
-		//usart_get_string(USART0, buffer, 1024, 1000);
-
+		
 		
 		usart_get_string(USART0, temp_volume, 1024, 100);
-		if(temp_volume[0] == "v"){
-			usart_log("esfuff", 1);
+		
+		if(temp_volume[0] == 118){
+			usart_log("before", temp_volume);
+			volume  = strtol(temp_volume, &str, 10);
+			usart_log("Volume", volume);
+			usart_log("String", str);
 		}
-		usart_log("Volume", temp_volume);
-		//volume = int(temp_buffer);
+
+		
 		delay_ms(1);
 
 	}
-	
-	
-
-	/* Insert application code here, after the board has been initialized. */
 }
