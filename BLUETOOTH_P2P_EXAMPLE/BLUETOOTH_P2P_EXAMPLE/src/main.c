@@ -520,7 +520,7 @@ int main (void)
 
 			usart_put_string(USART1, "mandando...\r\n");
 		
-			sprintf(buffer, "v%d \n", encoderPosCount);
+			sprintf(buffer, "blabla bla 0 ", encoderPosCount);
 			usart_log("encoder", buffer);
 			usart_put_string(UART3, buffer);
 			flag_encoder = 0;

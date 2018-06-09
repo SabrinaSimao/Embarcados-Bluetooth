@@ -12,11 +12,12 @@
 #include "PingPong.h"
 #include <errno.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 volatile long g_systimer = 0;
 //volatile uint8_t flag_online = 0;
 //volatile uint8_t not_connected = 1;
-volatile uint8_t volume;
+long volume;
 //void USART0_Handler();
 
 //coisas SA
@@ -323,13 +324,14 @@ int main (void)
 		
 		
 		usart_get_string(USART0, temp_volume, 1024, 100);
+		
 		if(temp_volume[0] == 118){
-			temp_volume[0] = 32;
 			usart_log("before", temp_volume);
 			volume  = strtol(temp_volume, &str, 10);
 			usart_log("Volume", volume);
+			usart_log("String", str);
 		}
-		
+
 		
 		delay_ms(1);
 
