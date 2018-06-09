@@ -32,14 +32,19 @@
       <framework-data>
         <options>
           <option id="common.boards" value="Add" config="" content-id="Atmel.ASF" />
+          <option id="common.services.basic.clock" value="Add" config="" content-id="Atmel.ASF" />
+          <option id="common.services.delay" value="Add" config="" content-id="Atmel.ASF" />
           <option id="common.services.basic.gpio" value="Add" config="" content-id="Atmel.ASF" />
           <option id="common.services.ioport" value="Add" config="" content-id="Atmel.ASF" />
+          <option id="common.services.basic.serial" value="Add" config="" content-id="Atmel.ASF" />
           <option id="sam.drivers.mpu" value="Add" config="" content-id="Atmel.ASF" />
           <option id="sam.drivers.pio" value="Add" config="" content-id="Atmel.ASF" />
-          <option id="common.services.basic.serial" value="Add" config="" content-id="Atmel.ASF" />
-          <option id="common.services.delay" value="Add" config="" content-id="Atmel.ASF" />
-          <option id="common.services.basic.clock" value="Add" config="" content-id="Atmel.ASF" />
           <option id="sam.drivers.pmc" value="Add" config="" content-id="Atmel.ASF" />
+          <option id="sam.drivers.tc" value="Add" config="" content-id="Atmel.ASF" />
+          <option id="common.utils.stdio.stdio_serial" value="Add" config="" content-id="Atmel.ASF" />
+          <option id="sam.drivers.afec" value="Add" config="" content-id="Atmel.ASF" />
+          <option id="sam.drivers.dacc" value="Add" config="" content-id="Atmel.ASF" />
+          <option id="sam.drivers.rtc" value="Add" config="" content-id="Atmel.ASF" />
           <option id="common.applications.user_application" value="Add" config="" content-id="Atmel.ASF" />
           <option id="sam.utils.cmsis.same70.source.template" value="Add" config="" content-id="Atmel.ASF" />
         </options>
@@ -232,6 +237,21 @@
           <file path="src/Config/conf_uart_serial.h" framework="" version="3.35.1" source="common\services\serial\sam_uart\module_config\conf_uart_serial.h" changed="False" content-id="Atmel.ASF" />
           <file path="src/ASF/sam/drivers/usart/usart.c" framework="" version="3.35.1" source="sam\drivers\usart\usart.c" changed="False" content-id="Atmel.ASF" />
           <file path="src/ASF/sam/drivers/usart/usart.h" framework="" version="3.35.1" source="sam\drivers\usart\usart.h" changed="False" content-id="Atmel.ASF" />
+          <file path="src/ASF/sam/drivers/afec/afec.c" framework="" version="3.35.1" source="sam\drivers\afec\afec.c" changed="False" content-id="Atmel.ASF" />
+          <file path="src/ASF/sam/drivers/afec/afec.h" framework="" version="3.35.1" source="sam\drivers\afec\afec.h" changed="False" content-id="Atmel.ASF" />
+          <file path="src/ASF/sam/drivers/dacc/dacc.c" framework="" version="3.35.1" source="sam\drivers\dacc\dacc.c" changed="False" content-id="Atmel.ASF" />
+          <file path="src/ASF/sam/drivers/dacc/dacc.h" framework="" version="3.35.1" source="sam\drivers\dacc\dacc.h" changed="False" content-id="Atmel.ASF" />
+          <file path="src/ASF/sam/drivers/rtc/rtc.c" framework="" version="3.35.1" source="sam\drivers\rtc\rtc.c" changed="False" content-id="Atmel.ASF" />
+          <file path="src/ASF/sam/drivers/rtc/rtc.h" framework="" version="3.35.1" source="sam\drivers\rtc\rtc.h" changed="False" content-id="Atmel.ASF" />
+          <file path="src/ASF/sam/drivers/tc/tc.c" framework="" version="3.35.1" source="sam\drivers\tc\tc.c" changed="False" content-id="Atmel.ASF" />
+          <file path="src/ASF/sam/drivers/tc/tc.h" framework="" version="3.35.1" source="sam\drivers\tc\tc.h" changed="False" content-id="Atmel.ASF" />
+          <file path="src/ASF/common/services/sleepmgr/sam/sleepmgr.c" framework="" version="3.35.1" source="common\services\sleepmgr\sam\sleepmgr.c" changed="False" content-id="Atmel.ASF" />
+          <file path="src/ASF/common/services/sleepmgr/sleepmgr.h" framework="" version="3.35.1" source="common\services\sleepmgr\sleepmgr.h" changed="False" content-id="Atmel.ASF" />
+          <file path="src/ASF/common/services/sleepmgr/sam/sleepmgr.h" framework="" version="3.35.1" source="common\services\sleepmgr\sam\sleepmgr.h" changed="False" content-id="Atmel.ASF" />
+          <file path="src/Config/conf_sleepmgr.h" framework="" version="3.35.1" source="common\services\sleepmgr\sam\module_config\conf_sleepmgr.h" changed="False" content-id="Atmel.ASF" />
+          <file path="src/ASF/common/utils/stdio/read.c" framework="" version="3.35.1" source="common\utils\stdio\read.c" changed="False" content-id="Atmel.ASF" />
+          <file path="src/ASF/common/utils/stdio/write.c" framework="" version="3.35.1" source="common\utils\stdio\write.c" changed="False" content-id="Atmel.ASF" />
+          <file path="src/ASF/common/utils/stdio/stdio_serial/stdio_serial.h" framework="" version="3.35.1" source="common\utils\stdio\stdio_serial\stdio_serial.h" changed="False" content-id="Atmel.ASF" />
         </files>
         <documentation help="http://asf.atmel.com/docs/3.35.1/common.applications.user_application.same70_xplained/html/index.html" />
         <offline-documentation help="" />
@@ -288,6 +308,12 @@
       <Value>../src/ASF/common/services/serial/sam_uart</Value>
       <Value>../src/ASF/common/services/serial</Value>
       <Value>../src/ASF/sam/drivers/usart</Value>
+      <Value>../src/ASF/sam/drivers/afec</Value>
+      <Value>../src/ASF/sam/drivers/dacc</Value>
+      <Value>../src/ASF/sam/drivers/rtc</Value>
+      <Value>../src/ASF/sam/drivers/tc</Value>
+      <Value>../src/ASF/common/services/sleepmgr</Value>
+      <Value>../src/ASF/common/utils/stdio/stdio_serial</Value>
     </ListValues>
   </armgcc.compiler.directories.IncludePaths>
   <armgcc.compiler.optimization.level>Optimize for size (-Os)</armgcc.compiler.optimization.level>
@@ -335,6 +361,12 @@
       <Value>../src/ASF/common/services/serial/sam_uart</Value>
       <Value>../src/ASF/common/services/serial</Value>
       <Value>../src/ASF/sam/drivers/usart</Value>
+      <Value>../src/ASF/sam/drivers/afec</Value>
+      <Value>../src/ASF/sam/drivers/dacc</Value>
+      <Value>../src/ASF/sam/drivers/rtc</Value>
+      <Value>../src/ASF/sam/drivers/tc</Value>
+      <Value>../src/ASF/common/services/sleepmgr</Value>
+      <Value>../src/ASF/common/utils/stdio/stdio_serial</Value>
     </ListValues>
   </armgcc.assembler.general.IncludePaths>
   <armgcc.preprocessingassembler.general.AssemblerFlags>-DARM_MATH_CM7=true -DBOARD=SAME70_XPLAINED -D__SAME70Q21__ -Dprintf=iprintf -Dscanf=iscanf</armgcc.preprocessingassembler.general.AssemblerFlags>
@@ -365,6 +397,12 @@
       <Value>../src/ASF/common/services/serial/sam_uart</Value>
       <Value>../src/ASF/common/services/serial</Value>
       <Value>../src/ASF/sam/drivers/usart</Value>
+      <Value>../src/ASF/sam/drivers/afec</Value>
+      <Value>../src/ASF/sam/drivers/dacc</Value>
+      <Value>../src/ASF/sam/drivers/rtc</Value>
+      <Value>../src/ASF/sam/drivers/tc</Value>
+      <Value>../src/ASF/common/services/sleepmgr</Value>
+      <Value>../src/ASF/common/utils/stdio/stdio_serial</Value>
     </ListValues>
   </armgcc.preprocessingassembler.general.IncludePaths>
 </ArmGcc>
@@ -415,6 +453,12 @@
       <Value>../src/ASF/common/services/serial/sam_uart</Value>
       <Value>../src/ASF/common/services/serial</Value>
       <Value>../src/ASF/sam/drivers/usart</Value>
+      <Value>../src/ASF/sam/drivers/afec</Value>
+      <Value>../src/ASF/sam/drivers/dacc</Value>
+      <Value>../src/ASF/sam/drivers/rtc</Value>
+      <Value>../src/ASF/sam/drivers/tc</Value>
+      <Value>../src/ASF/common/services/sleepmgr</Value>
+      <Value>../src/ASF/common/utils/stdio/stdio_serial</Value>
     </ListValues>
   </armgcc.compiler.directories.IncludePaths>
   <armgcc.compiler.optimization.level>Optimize (-O1)</armgcc.compiler.optimization.level>
@@ -463,6 +507,12 @@
       <Value>../src/ASF/common/services/serial/sam_uart</Value>
       <Value>../src/ASF/common/services/serial</Value>
       <Value>../src/ASF/sam/drivers/usart</Value>
+      <Value>../src/ASF/sam/drivers/afec</Value>
+      <Value>../src/ASF/sam/drivers/dacc</Value>
+      <Value>../src/ASF/sam/drivers/rtc</Value>
+      <Value>../src/ASF/sam/drivers/tc</Value>
+      <Value>../src/ASF/common/services/sleepmgr</Value>
+      <Value>../src/ASF/common/utils/stdio/stdio_serial</Value>
     </ListValues>
   </armgcc.assembler.general.IncludePaths>
   <armgcc.assembler.debugging.DebugLevel>Default (-g)</armgcc.assembler.debugging.DebugLevel>
@@ -494,6 +544,12 @@
       <Value>../src/ASF/common/services/serial/sam_uart</Value>
       <Value>../src/ASF/common/services/serial</Value>
       <Value>../src/ASF/sam/drivers/usart</Value>
+      <Value>../src/ASF/sam/drivers/afec</Value>
+      <Value>../src/ASF/sam/drivers/dacc</Value>
+      <Value>../src/ASF/sam/drivers/rtc</Value>
+      <Value>../src/ASF/sam/drivers/tc</Value>
+      <Value>../src/ASF/common/services/sleepmgr</Value>
+      <Value>../src/ASF/common/utils/stdio/stdio_serial</Value>
     </ListValues>
   </armgcc.preprocessingassembler.general.IncludePaths>
   <armgcc.preprocessingassembler.debugging.DebugLevel>Default (-Wa,-g)</armgcc.preprocessingassembler.debugging.DebugLevel>
@@ -516,15 +572,23 @@
     <Folder Include="src\ASF\common\services\ioport\sam\" />
     <Folder Include="src\ASF\common\services\serial\" />
     <Folder Include="src\ASF\common\services\serial\sam_uart\" />
+    <Folder Include="src\ASF\common\services\sleepmgr\" />
+    <Folder Include="src\ASF\common\services\sleepmgr\sam\" />
     <Folder Include="src\ASF\common\utils\" />
     <Folder Include="src\ASF\common\utils\interrupt\" />
+    <Folder Include="src\ASF\common\utils\stdio\" />
+    <Folder Include="src\ASF\common\utils\stdio\stdio_serial\" />
     <Folder Include="src\ASF\sam\" />
     <Folder Include="src\ASF\sam\boards\" />
     <Folder Include="src\ASF\sam\boards\same70_xplained\" />
     <Folder Include="src\ASF\sam\drivers\" />
+    <Folder Include="src\ASF\sam\drivers\afec\" />
+    <Folder Include="src\ASF\sam\drivers\dacc\" />
     <Folder Include="src\ASF\sam\drivers\mpu\" />
     <Folder Include="src\ASF\sam\drivers\pio\" />
     <Folder Include="src\ASF\sam\drivers\pmc\" />
+    <Folder Include="src\ASF\sam\drivers\rtc\" />
+    <Folder Include="src\ASF\sam\drivers\tc\" />
     <Folder Include="src\ASF\sam\drivers\uart\" />
     <Folder Include="src\ASF\sam\drivers\usart\" />
     <Folder Include="src\ASF\sam\utils\" />
@@ -555,6 +619,54 @@
     <Folder Include="src\config\" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="src\ASF\common\services\sleepmgr\sam\sleepmgr.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\PingPong.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\ping_pong_buffer.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <None Include="src\ASF\common\services\sleepmgr\sleepmgr.h">
+      <SubType>compile</SubType>
+    </None>
+    <None Include="src\ASF\common\services\sleepmgr\sam\sleepmgr.h">
+      <SubType>compile</SubType>
+    </None>
+    <Compile Include="src\ASF\common\utils\stdio\read.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <None Include="src\ASF\common\utils\stdio\stdio_serial\stdio_serial.h">
+      <SubType>compile</SubType>
+    </None>
+    <Compile Include="src\ASF\common\utils\stdio\write.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\ASF\sam\drivers\afec\afec.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <None Include="src\ASF\sam\drivers\afec\afec.h">
+      <SubType>compile</SubType>
+    </None>
+    <Compile Include="src\ASF\sam\drivers\dacc\dacc.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <None Include="src\ASF\sam\drivers\dacc\dacc.h">
+      <SubType>compile</SubType>
+    </None>
+    <Compile Include="src\ASF\sam\drivers\rtc\rtc.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <None Include="src\ASF\sam\drivers\rtc\rtc.h">
+      <SubType>compile</SubType>
+    </None>
+    <Compile Include="src\ASF\sam\drivers\tc\tc.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <None Include="src\ASF\sam\drivers\tc\tc.h">
+      <SubType>compile</SubType>
+    </None>
     <Compile Include="src\ASF\sam\drivers\usart\usart.c">
       <SubType>compile</SubType>
     </Compile>
@@ -1083,6 +1195,9 @@
     <Compile Include="src\ASF\sam\utils\syscalls\gcc\syscalls.c">
       <SubType>compile</SubType>
     </Compile>
+    <None Include="src\config\conf_sleepmgr.h">
+      <SubType>compile</SubType>
+    </None>
     <Compile Include="src\main.c">
       <SubType>compile</SubType>
     </Compile>

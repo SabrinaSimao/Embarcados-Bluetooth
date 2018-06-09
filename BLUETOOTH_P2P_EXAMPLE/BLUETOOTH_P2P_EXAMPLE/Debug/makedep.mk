@@ -4,8 +4,6 @@
 
 src\ASF\common\services\sleepmgr\sam\sleepmgr.c
 
-src\ping_pong_buffer.c
-
 src\ASF\common\utils\stdio\read.c
 
 src\ASF\common\utils\stdio\write.c

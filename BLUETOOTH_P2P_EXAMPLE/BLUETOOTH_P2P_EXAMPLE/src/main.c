@@ -10,7 +10,6 @@
 #include <string.h>
 #include <assert.h>
 #include "conf_dacc_sinewave_example.h"
-#include "PingPong.h"
 
 /************************************************************************/
 /* variaveis globais                                                    */
@@ -579,7 +578,7 @@ int main (void)
 
 			usart_put_string(USART1, "mandando...\r\n");
 		
-			sprintf(buffer, "%d \n", encoderPosCount);
+			sprintf(buffer, "v%d \n", encoderPosCount);
 			usart_log("encoder", buffer);
 			usart_put_string(UART3, buffer);
 			flag_encoder = 0;

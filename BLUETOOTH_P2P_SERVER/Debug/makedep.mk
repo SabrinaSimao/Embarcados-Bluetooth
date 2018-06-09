@@ -2,6 +2,22 @@
 # Automatically-generated file. Do not edit or delete the file
 ################################################################################
 
+src\ASF\common\services\sleepmgr\sam\sleepmgr.c
+
+src\ping_pong_buffer.c
+
+src\ASF\common\utils\stdio\read.c
+
+src\ASF\common\utils\stdio\write.c
+
+src\ASF\sam\drivers\afec\afec.c
+
+src\ASF\sam\drivers\dacc\dacc.c
+
+src\ASF\sam\drivers\rtc\rtc.c
+
+src\ASF\sam\drivers\tc\tc.c
+
 src\ASF\sam\drivers\usart\usart.c
 
 src\ASF\common\services\serial\usart_serial.c
