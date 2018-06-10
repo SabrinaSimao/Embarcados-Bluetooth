@@ -97,7 +97,7 @@ void TC0_Handler(void){
 	volatile uint32_t ul_dummy;
 
 	/****************************************************************
-	* Devemos indicar ao TC que a interrupção foi satisfeita.
+	* Devemos indicar ao TC que a interrupo foi satisfeita.
 	******************************************************************/
 	ul_dummy = tc_get_status(TC0, 0);
 	printf("kakaka \n");
@@ -203,33 +203,11 @@ void hm10_config_server(void) {
 	pio_configure(PIOB, PIO_PERIPH_C, (1 << 1), PIO_DEFAULT);
 	
 	
-	/* Ativa Clock e IRQ periferico USART0 */
-	//sysclk_enable_peripheral_clock(ID_USART0);
-	
-	//usart_enable_interrupt(USART0, US_IER_RXRDY);
-	//NVIC_SetPriority(ID_USART0, 1);
-	//NVIC_EnableIRQ(ID_USART0);
 
 
 }
 
-/*void USART0_Handler(){
-	
-	char buffer[54];
-	
-	usart_get_string(USART0, buffer, 54, 1000);
-	usart_put_string(USART1,"Entrou");
-	
-	if(not_connected){
-		if (usart_get_string(USART0, buffer, 54, 1000) == "!\n"){
-			flag_online = 1;
-			not_connected = 0;
-		} else{
-			usart_put_string(USART1, "Recebi varias bosta\r\n");
-			usart_put_string(USART0, "NA\n");	
-		}
-	}
-}*/
+
 
 int hm10_server_init(void) {
 	char buffer_rx[128];
@@ -266,7 +244,7 @@ static void config_ADC_TEMP(void){
 	/* configura call back */
 	afec_set_callback(AFEC0, AFEC_INTERRUPT_EOC_1,	AFEC_Temp_callback, 1); 
    
-	/*** Configuracao específica do canal AFEC ***/
+	/*** Configuracao especfica do canal AFEC ***/
 	struct afec_ch_config afec_ch_cfg;
 	afec_ch_get_config_defaults(&afec_ch_cfg);
 	afec_ch_cfg.gain = AFEC_GAINVALUE_0;
@@ -285,7 +263,7 @@ static void config_ADC_TEMP(void){
 	afec_temp_sensor_get_config_defaults(&afec_temp_sensor_cfg);
 	afec_temp_sensor_set_config(AFEC0, &afec_temp_sensor_cfg);
 
-	/* Selecina canal e inicializa conversão */  
+	/* Selecina canal e inicializa converso */  
 	afec_channel_enable(AFEC0, canal_generico_pino);
 }
 
@@ -308,15 +286,10 @@ void TC_init(Tc * TC, int ID_TC, int TC_CHANNEL, int freq){
 	uint32_t ul_sysclk = sysclk_get_cpu_hz();
 
 	/* Configura o PMC */
-	/* O TimerCounter é meio confuso
-	o uC possui 3 TCs, cada TC possui 3 canais
-	TC0 : ID_TC0, ID_TC1, ID_TC2
-	TC1 : ID_TC3, ID_TC4, ID_TC5
-	TC2 : ID_TC6, ID_TC7, ID_TC8
-	*/
+
 	pmc_enable_periph_clk(ID_TC);
 
-	/** Configura o TC para operar em  4Mhz e interrupçcão no RC compare */
+	/** Configura o TC para operar em  4Mhz e interrupco no RC compare */
 	tc_find_mck_divisor(freq, ul_sysclk, &ul_div, &ul_tcclks, ul_sysclk);
 	
 	//PMC->PMC_SCER = 1 << 14;
@@ -331,14 +304,7 @@ void TC_init(Tc * TC, int ID_TC, int TC_CHANNEL, int freq){
 	
 	tc_write_rc(TC, TC_CHANNEL, (ul_sysclk / ul_div) / freq /8 );
 	tc_write_ra(TC, TC_CHANNEL, (ul_sysclk / ul_div) / freq / 8 / 2);
-	//tc_write_rc(TC, TC_CHANNEL, 3*65532/3);
 
-	//tc_write_rc(TC, TC_CHANNEL, (ul_sysclk / ul_div) / freq);
-
-	/* Configura e ativa interrupçcão no TC canal 0 */
-	/* Interrupção no C */
-	//NVIC_EnableIRQ((IRQn_Type) ID_TC);
-//	tc_enable_interrupt(TC, TC_CHANNEL, TC_IER_CPCS);
 
 	/* Inicializa o canal 0 do TC */
 	tc_start(TC, TC_CHANNEL);
@@ -382,14 +348,14 @@ int main (void)
 		
 		usart_get_string(USART0, temp_instrucao, 1024, 100);
 		
-		if(temp_instrucao[0] == 105){ // checa se é uma instrução tipo i(intrução_geral)
+		if(temp_instrucao[0] == 105){ // checa se  uma instruo tipo i(intruo_geral)
 			usart_log("antes", temp_instrucao);
 			funcao_escolhida = strtol(temp_instrucao, &str, 10);
 			usart_log("Volume", funcao_escolhida);
 			usart_log("String", str);
 		}
 		
-		if(temp_instrucao[0] == 118){ // checa se é uma instrução tipo v(volume)
+		if(temp_instrucao[0] == 118){ // checa se  uma instruo tipo v(volume)
 			usart_log("antes", temp_instrucao);
 			volume  = strtol(temp_instrucao, &str, 10);
 			usart_log("Volume", volume);
