@@ -1,1 +1,1 @@
-﻿![Alt text](https://gitlab.com/Formulos/Embarcados_final.git.png?raw=true "Title")
+﻿![Alt text](https://gitlab.com/Formulos/Embarcados_final.git.png)
