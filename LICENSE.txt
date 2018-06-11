@@ -1,4 +1,4 @@
-O codigo usando para fazer parte desse projeto (buffer ping-pong) não de autoria propria, aqui estão as informaçoes do codigo original:
+﻿O codigo usando para fazer parte desse projeto (buffer ping-pong) não de autoria propria, aqui estão as informaçoes do codigo original:
 
 - Nome do autor : uLipe
 - Data : maio de 2018
