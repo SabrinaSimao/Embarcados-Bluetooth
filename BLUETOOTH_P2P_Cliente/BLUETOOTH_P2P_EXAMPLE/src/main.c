@@ -9,7 +9,6 @@
 #include <asf.h>
 #include <string.h>
 #include <assert.h>
-#include "conf_dacc_sinewave_example.h"
 
 /************************************************************************/
 /* variaveis globais                                                    */
@@ -404,7 +403,7 @@ int main (void)
 
 	while(1) {
 					
-			sleepmgr_enter_sleep()
+			pmc_sleep(SAM_PM_SMODE_SLEEP_WFI);
 
 
 			
