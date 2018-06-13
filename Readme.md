@@ -4,7 +4,7 @@
 
 ### Sabrina Simão e Paulo Tozzo
 
-![Diagrama de Blocos](imagens/EMBARCADOSf.png | width=100)
+![Diagrama de Blocos](imagens/EMBARCADOSf.png)
 
 ## Descrição do Funcionamento
 
@@ -14,5 +14,5 @@ A segunda e terceira pasta são respectivas ao projeto final, onde há junção 
 
 Seguindo o esquema de conexão e montagem abaixo, você poderá controlar a distorção que entra no microcontrolador. O botão seleciona a distorção desejada (num total de 3, então toda vez que você apertar o botão ele seleciona a próxima, 0,1,2,0,1,2...) e o encoder altera a variável respectiva à distorção (volume, por exemplo).
 
-![Diagrama de montagem](imagens/server.png =50x50)
-![Diagrama de montagem](imagens/client.png =50x50)
+![Diagrama de montagem](imagens/server.png)
+![Diagrama de montagem](imagens/client.png)
