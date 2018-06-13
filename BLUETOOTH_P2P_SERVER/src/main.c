@@ -22,7 +22,7 @@ volatile long g_systimer = 0;
 //void USART0_Handler();
 
 //coisas SA
-#define canal_generico_pino 1//canal 0 = PD30 canal 1 = PA21
+#define canal_generico_pino 0//canal 0 = PD30 canal 1 = PA21
 //! DAC channel used for test
 #define DACC_CHANNEL        0 // (PB13)
 //! DAC register base for test
@@ -119,8 +119,9 @@ static void AFEC_Temp_callback(void){
 	
 	g_ul_value = afec_channel_get_value(AFEC0, canal_generico_pino);
 	
-	t[funcao_escolhida].test_function();
-
+	//t[funcao_escolhida].test_function();
+	
+	
 	// check swap
 	if(ppbuf_get_full_signal(&buffer,false) == true) {
 		ppbuf_get_full_signal(&buffer,true); // swap
@@ -134,10 +135,10 @@ static void AFEC_Temp_callback(void){
 	dacc_get_interrupt_status(DACC_BASE);
 	
 	if ((buffer.ping == 0)){
-		dacc_write_conversion_data(DACC_BASE, buf, DACC_CHANNEL);
+		dacc_write_conversion_data(DACC_BASE, buf/4, DACC_CHANNEL);
 	}
 	else{
-		dacc_write_conversion_data(DACC_BASE, buf, DACC_CHANNEL);
+		dacc_write_conversion_data(DACC_BASE, buf/16, DACC_CHANNEL);
 	}
 }
 
@@ -242,7 +243,7 @@ static void config_ADC_TEMP(void){
 	AFEC0->AFEC_MR |= 3;
   
 	/* configura call back */
-	afec_set_callback(AFEC0, AFEC_INTERRUPT_EOC_1,	AFEC_Temp_callback, 1); 
+	afec_set_callback(AFEC0, AFEC_INTERRUPT_EOC_0,	AFEC_Temp_callback, 1); 
    
 	/*** Configuracao especfica do canal AFEC ***/
 	struct afec_ch_config afec_ch_cfg;
@@ -314,7 +315,7 @@ int main (void)
 {
 	board_init();
 	sysclk_init();
-	delay_init();
+	//delay_init();
 	SysTick_Config(sysclk_get_cpu_hz() / 1000); // 1 ms
 	config_console();
 	
@@ -336,7 +337,7 @@ int main (void)
 		
 	/* inicializa e configura adc */
 	config_ADC_TEMP();
-		
+	config_DAC();
 		
 	TC_init(TC0, ID_TC0, 0, 100000);
 	
@@ -346,7 +347,7 @@ int main (void)
 	while(1) {
 		
 		
-		usart_get_string(USART0, temp_instrucao, 1024, 100);
+		usart_get_string(USART0, temp_instrucao, 1024, 1);
 		
 		if(temp_instrucao[0] == 105){ // checa se  uma instruo tipo i(intruo_geral)
 			usart_log("antes", temp_instrucao);
@@ -363,7 +364,7 @@ int main (void)
 		}
 
 		
-		delay_ms(1);
+		delay_ms(100);
 
 	}
 }

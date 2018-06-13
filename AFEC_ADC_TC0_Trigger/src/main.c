@@ -43,7 +43,7 @@
 #define BUT_PIN_MASK		  (1 << BUT_PIN)
 #define BUT_DEBOUNCING_VALUE  79
 
-#define TEST(f) {.test_function=f, .test_name=#f}
+//#define TEST(f) {.test_function=f, .test_name=#f}
 
 
 /************************************************************************/
@@ -53,13 +53,13 @@ void TC_init(Tc * TC, int ID_TC, int TC_CHANNEL, int freq);
 static void Softning();
 static void Hard_clipping();
 static void Volume();
-
+/*
 typedef struct {
 	static void (*test_function)();
 	char test_name[100];
 } test_data;
-
-test_data t[] = {TEST(Softning), TEST(Hard_clipping), TEST(Volume)};
+*/
+//test_data t[] = {TEST(Softning), TEST(Hard_clipping), TEST(Volume)};
 
 
 
@@ -128,11 +128,11 @@ static void AFEC_Temp_callback(void){
 	
 	g_ul_value = afec_channel_get_value(AFEC0, canal_generico_pino);
 	
-	t[funcao_escolhida].test_function();
 	
-	 /*VOLUME
-	if( !pio_get(BUT_PIO, PIO_INPUT, BUT_PIN_MASK)){
-	}*/
+	 //VOLUME
+	if(!pio_get(BUT_PIO, PIO_INPUT, BUT_PIN_MASK)){
+		g_ul_value  = (int) ((float) g_ul_value * volume);
+	}
 	
 
 	// check swap
@@ -150,10 +150,10 @@ static void AFEC_Temp_callback(void){
 
 	
 	if ((buffer.ping == 0)){
-		dacc_write_conversion_data(DACC_BASE, buf, DACC_CHANNEL);
+		dacc_write_conversion_data(DACC_BASE, buf/16, DACC_CHANNEL);
 	}
 	else{
-		dacc_write_conversion_data(DACC_BASE, buf, DACC_CHANNEL);
+		dacc_write_conversion_data(DACC_BASE, buf/4, DACC_CHANNEL);
 	}
 }
 

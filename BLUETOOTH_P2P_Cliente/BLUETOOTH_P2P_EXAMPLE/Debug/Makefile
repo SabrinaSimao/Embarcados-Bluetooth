@@ -229,9 +229,9 @@ src/ASF/sam/utils/cmsis/same70/source/templates/system_same70.d \
 src/ASF/sam/utils/syscalls/gcc/syscalls.d \
 src/main.d
 
-OUTPUT_FILE_PATH +=BLUETOOTH_P2P_EXAMPLE.elf
+OUTPUT_FILE_PATH +=BLUETOOTH_P2P_Client.elf
 
-OUTPUT_FILE_PATH_AS_ARGS +=BLUETOOTH_P2P_EXAMPLE.elf
+OUTPUT_FILE_PATH_AS_ARGS +=BLUETOOTH_P2P_Client.elf
 
 ADDITIONAL_DEPENDENCIES:=
 
@@ -456,14 +456,14 @@ all: $(OUTPUT_FILE_PATH) $(ADDITIONAL_DEPENDENCIES)
 $(OUTPUT_FILE_PATH): $(OBJS) $(USER_OBJS) $(OUTPUT_FILE_DEP) $(LIB_DEP) $(LINKER_SCRIPT_DEP)
 	@echo Building target: $@
 	@echo Invoking: ARM/GNU Linker : 6.3.1
-	$(QUOTE)C:\Program Files (x86)\Atmel\Studio\7.0\toolchain\arm\arm-gnu-toolchain\bin\arm-none-eabi-gcc.exe$(QUOTE) -o$(OUTPUT_FILE_PATH_AS_ARGS) $(OBJS_AS_ARGS) $(USER_OBJS) $(LIBS) -mthumb -Wl,-Map="BLUETOOTH_P2P_EXAMPLE.map" -Wl,--start-group -larm_cortexM7lfsp_math_softfp -lm  -Wl,--end-group -L"../src/ASF/thirdparty/CMSIS/Lib/GCC"  -Wl,--gc-sections -mcpu=cortex-m7 -Wl,--entry=Reset_Handler -Wl,--cref -mthumb -T../src/ASF/sam/utils/linker_scripts/same70/same70q21/gcc/flash.ld  
+	$(QUOTE)C:\Program Files (x86)\Atmel\Studio\7.0\toolchain\arm\arm-gnu-toolchain\bin\arm-none-eabi-gcc.exe$(QUOTE) -o$(OUTPUT_FILE_PATH_AS_ARGS) $(OBJS_AS_ARGS) $(USER_OBJS) $(LIBS) -mthumb -Wl,-Map="BLUETOOTH_P2P_Client.map" -Wl,--start-group -larm_cortexM7lfsp_math_softfp -lm  -Wl,--end-group -L"../src/ASF/thirdparty/CMSIS/Lib/GCC"  -Wl,--gc-sections -mcpu=cortex-m7 -Wl,--entry=Reset_Handler -Wl,--cref -mthumb -T../src/ASF/sam/utils/linker_scripts/same70/same70q21/gcc/flash.ld  
 	@echo Finished building target: $@
-	"C:\Program Files (x86)\Atmel\Studio\7.0\toolchain\arm\arm-gnu-toolchain\bin\arm-none-eabi-objcopy.exe" -O binary "BLUETOOTH_P2P_EXAMPLE.elf" "BLUETOOTH_P2P_EXAMPLE.bin"
-	"C:\Program Files (x86)\Atmel\Studio\7.0\toolchain\arm\arm-gnu-toolchain\bin\arm-none-eabi-objcopy.exe" -O ihex -R .eeprom -R .fuse -R .lock -R .signature  "BLUETOOTH_P2P_EXAMPLE.elf" "BLUETOOTH_P2P_EXAMPLE.hex"
-	"C:\Program Files (x86)\Atmel\Studio\7.0\toolchain\arm\arm-gnu-toolchain\bin\arm-none-eabi-objcopy.exe" -j .eeprom --set-section-flags=.eeprom=alloc,load --change-section-lma .eeprom=0 --no-change-warnings -O binary "BLUETOOTH_P2P_EXAMPLE.elf" "BLUETOOTH_P2P_EXAMPLE.eep" || exit 0
-	"C:\Program Files (x86)\Atmel\Studio\7.0\toolchain\arm\arm-gnu-toolchain\bin\arm-none-eabi-objdump.exe" -h -S "BLUETOOTH_P2P_EXAMPLE.elf" > "BLUETOOTH_P2P_EXAMPLE.lss"
-	"C:\Program Files (x86)\Atmel\Studio\7.0\toolchain\arm\arm-gnu-toolchain\bin\arm-none-eabi-objcopy.exe" -O srec -R .eeprom -R .fuse -R .lock -R .signature  "BLUETOOTH_P2P_EXAMPLE.elf" "BLUETOOTH_P2P_EXAMPLE.srec"
-	"C:\Program Files (x86)\Atmel\Studio\7.0\toolchain\arm\arm-gnu-toolchain\bin\arm-none-eabi-size.exe" "BLUETOOTH_P2P_EXAMPLE.elf"
+	"C:\Program Files (x86)\Atmel\Studio\7.0\toolchain\arm\arm-gnu-toolchain\bin\arm-none-eabi-objcopy.exe" -O binary "BLUETOOTH_P2P_Client.elf" "BLUETOOTH_P2P_Client.bin"
+	"C:\Program Files (x86)\Atmel\Studio\7.0\toolchain\arm\arm-gnu-toolchain\bin\arm-none-eabi-objcopy.exe" -O ihex -R .eeprom -R .fuse -R .lock -R .signature  "BLUETOOTH_P2P_Client.elf" "BLUETOOTH_P2P_Client.hex"
+	"C:\Program Files (x86)\Atmel\Studio\7.0\toolchain\arm\arm-gnu-toolchain\bin\arm-none-eabi-objcopy.exe" -j .eeprom --set-section-flags=.eeprom=alloc,load --change-section-lma .eeprom=0 --no-change-warnings -O binary "BLUETOOTH_P2P_Client.elf" "BLUETOOTH_P2P_Client.eep" || exit 0
+	"C:\Program Files (x86)\Atmel\Studio\7.0\toolchain\arm\arm-gnu-toolchain\bin\arm-none-eabi-objdump.exe" -h -S "BLUETOOTH_P2P_Client.elf" > "BLUETOOTH_P2P_Client.lss"
+	"C:\Program Files (x86)\Atmel\Studio\7.0\toolchain\arm\arm-gnu-toolchain\bin\arm-none-eabi-objcopy.exe" -O srec -R .eeprom -R .fuse -R .lock -R .signature  "BLUETOOTH_P2P_Client.elf" "BLUETOOTH_P2P_Client.srec"
+	"C:\Program Files (x86)\Atmel\Studio\7.0\toolchain\arm\arm-gnu-toolchain\bin\arm-none-eabi-size.exe" "BLUETOOTH_P2P_Client.elf"
 	
 	
 
@@ -475,5 +475,5 @@ $(OUTPUT_FILE_PATH): $(OBJS) $(USER_OBJS) $(OUTPUT_FILE_DEP) $(LIB_DEP) $(LINKER
 clean:
 	-$(RM) $(OBJS_AS_ARGS) $(EXECUTABLES)  
 	-$(RM) $(C_DEPS_AS_ARGS)   
-	rm -rf "BLUETOOTH_P2P_EXAMPLE.elf" "BLUETOOTH_P2P_EXAMPLE.a" "BLUETOOTH_P2P_EXAMPLE.hex" "BLUETOOTH_P2P_EXAMPLE.bin" "BLUETOOTH_P2P_EXAMPLE.lss" "BLUETOOTH_P2P_EXAMPLE.eep" "BLUETOOTH_P2P_EXAMPLE.map" "BLUETOOTH_P2P_EXAMPLE.srec"
+	rm -rf "BLUETOOTH_P2P_Client.elf" "BLUETOOTH_P2P_Client.a" "BLUETOOTH_P2P_Client.hex" "BLUETOOTH_P2P_Client.bin" "BLUETOOTH_P2P_Client.lss" "BLUETOOTH_P2P_Client.eep" "BLUETOOTH_P2P_Client.map" "BLUETOOTH_P2P_Client.srec"
 	
