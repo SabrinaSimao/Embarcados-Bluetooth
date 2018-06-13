@@ -5,3 +5,9 @@
 - Titulo : ping_pong_buffer
 - Tipo: codigo fonte
 - Fonte : https://github.com/uLipe/ping_pong_buffer
+
+Os projeto usa amplamente os exemplos dados pela Microsoft na IDE Atmel Studio:
+
+-Exemplo de USART
+-Exemplo de leitura analógico para digital com potenciômetro
+-Exemplo de bluetooth

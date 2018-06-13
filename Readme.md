@@ -1,6 +1,6 @@
 ﻿# Projeto Final Computação Embarcada
 
-## Processamento de Sinais e Transmissão Bluetooth 4.0
+## Pedal Digital com Módulo e Transmissão Bluetooth 4.0
 
 ### Sabrina Simão e Paulo Tozzo
 
