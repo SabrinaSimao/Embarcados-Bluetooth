@@ -4,7 +4,7 @@
 
 ### Sabrina Simão e Paulo Tozzo
 
-![Diagrama de Blocos](imagens/EMBARCADOSf.png =300px)
+![Diagrama de Blocos](imagens/EMBARCADOSf.png) { width: 200px; }
 
 ## Descrição do Funcionamento
 
